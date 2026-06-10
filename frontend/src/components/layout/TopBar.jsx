@@ -4,7 +4,7 @@ import Logo from '../../assets/logo.svg?react';
 
 export function TopBar({ fetchedAt }) {
   const { user, logout } = useAuth();
-  const syncLabel = fetchedAt ? formatSyncTime(fetchedAt) : 'Loading data…';
+  const syncLabel = fetchedAt ? formatSyncTime(fetchedAt) : null;
 
   return (
     <div className="flex items-center justify-between px-7 py-2 bg-brand border-b border-brand-dark flex-wrap gap-2.5">
@@ -13,7 +13,7 @@ export function TopBar({ fetchedAt }) {
           <div className="absolute inset-0 bg-white rounded-full" />
           <Logo className="relative h-10 w-auto" />
         </div>
-        <p className="text-[15px] text-white/70">{syncLabel}</p>
+        {syncLabel && <p className="text-[15px] text-white/70">{syncLabel}</p>}
       </div>
       {user && (
         <div className="flex items-center gap-5">
