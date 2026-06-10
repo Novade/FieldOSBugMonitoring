@@ -1,0 +1,10 @@
+.git
+.env
+.env.*
+backend/node_modules
+frontend/node_modules
+frontend/dist
+frontend/build
+npm-debug.log*
+.DS_Store
+.azure

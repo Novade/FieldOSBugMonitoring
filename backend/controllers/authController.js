@@ -117,8 +117,8 @@ async function handleCallback(req, res, next) {
       ? `Login failed: ${detail}`
       : 'Login failed. Please try again.';
 
-    const loginUrl = config.isDev ? config.frontendUrl : '/';
-    res.redirect(`${loginUrl}/login?error=${encodeURIComponent(clientMsg)}`);
+    const loginPath = `/login?error=${encodeURIComponent(clientMsg)}`;
+    res.redirect(config.isDev ? `${config.frontendUrl}${loginPath}` : loginPath);
   }
 }
 
