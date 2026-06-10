@@ -114,8 +114,8 @@ async function handleCallback(req, res, next) {
     const clientMsg = err.isOAuthError
       ? err.message
       : config.isDev
-        ? `Login failed: ${detail}`
-        : 'Login failed. Please try again.';
+      ? `Login failed: ${detail}`
+      : 'Login failed. Please try again.';
 
     const loginUrl = config.isDev ? config.frontendUrl : '/';
     res.redirect(`${loginUrl}/login?error=${encodeURIComponent(clientMsg)}`);
@@ -136,22 +136,4 @@ function getSession(req, res) {
   res.json({ authenticated: true, user: req.session.user });
 }
 
-// Dev-only bypass — creates a session without OAuth. Never available in production.
-function devLogin(req, res) {
-  if (!config.isDev) return res.status(404).json({ error: 'Not found' });
-  req.session.user = {
-    accountId: 'dev-user',
-    email: config.jira.userEmail,
-    displayName: 'Dev User',
-    avatarUrl: '',
-  };
-  req.session.save((err) => {
-    if (err) {
-      console.error('[auth] dev-login session save error:', err);
-      return res.status(500).json({ error: 'Session save failed' });
-    }
-    res.json({ ok: true });
-  });
-}
-
-module.exports = { initiateOAuth, handleCallback, logout, getSession, devLogin };
+module.exports = { initiateOAuth, handleCallback, logout, getSession };
