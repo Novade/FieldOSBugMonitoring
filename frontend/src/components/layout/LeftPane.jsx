@@ -28,6 +28,8 @@ export function LeftPane() {
           return (
             <button
               key={path}
+              type="button"
+              aria-current={isActive ? 'page' : undefined}
               onClick={() => navigate(path)}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-[14px] font-medium w-full text-left transition-colors ${
                 isActive

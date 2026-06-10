@@ -25,7 +25,9 @@ const TAB_TO_PATH = {
 export function AllBugsPage() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const activeTab = PATH_TO_TAB[pathname] ?? 'bugs-dashboard';
+  const activeTab =
+    PATH_TO_TAB[pathname] ??
+    (pathname.startsWith('/regression') ? 'reg-dashboard' : 'bugs-dashboard');
   const setSyncTime = useContext(SyncTimeContext);
 
   const { bugs, regressions, fetchedAt, loading, error } = useJiraData();
