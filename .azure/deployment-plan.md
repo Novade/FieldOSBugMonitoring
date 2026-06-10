@@ -1,6 +1,6 @@
 # Azure Deployment Plan
 
-Status: Deployed - Pending Atlassian Callback Registration
+Status: Deployed - Custom Domain Configured
 
 ## Goal
 Deploy Field OS Bug Monitoring Dashboard to Azure Container Apps as a single container that serves both the React frontend and Express backend from one public URL.
@@ -51,5 +51,7 @@ Deploy Field OS Bug Monitoring Dashboard to Azure Container Apps as a single con
 - App URL: https://ca-fieldos-bug-dashboard.icyisland-594d23d6.southeastasia.azurecontainerapps.io
 - Health URL: https://ca-fieldos-bug-dashboard.icyisland-594d23d6.southeastasia.azurecontainerapps.io/health
 - Atlassian callback URL: https://ca-fieldos-bug-dashboard.icyisland-594d23d6.southeastasia.azurecontainerapps.io/auth/callback
+- Custom app URL: https://fos-bugs.novade.net
+- Custom Atlassian callback URL: https://fos-bugs.novade.net/auth/callback
 - Verified health endpoint returned `{ "ok": true }`.
 - Verified root URL returns the React frontend HTML.
