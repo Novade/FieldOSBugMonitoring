@@ -64,7 +64,7 @@ function applyDrill(data, drill) {
   }
 }
 
-export function BacklogTable({ issues, drill, onClearDrill }) {
+export function BacklogTable({ issues, drill, onClearDrill, showWorkspace = false }) {
   const [filters, setFilters] = useState(INITIAL_FILTERS);
   const [sortCol, setSortCol] = useState(null);
   const [sortDir, setSortDir] = useState(0);
@@ -204,6 +204,11 @@ export function BacklogTable({ issues, drill, onClearDrill }) {
                 <th onClick={() => toggleSort('a')} className={thClass('a')}>
                   Assignee
                 </th>
+                {showWorkspace && (
+                  <th onClick={() => toggleSort('w')} className={thClass('w')}>
+                    Workspace
+                  </th>
+                )}
                 <th className="text-left px-3.5 py-2.5 font-semibold text-[11px] text-[#8896b0] bg-[#f5f7fa] border-b border-[#dde2ea] uppercase tracking-[.5px] whitespace-nowrap">
                   Created
                 </th>
@@ -268,6 +273,18 @@ export function BacklogTable({ issues, drill, onClearDrill }) {
                   >
                     {b.a}
                   </td>
+                  {showWorkspace && (
+                    <td
+                      className={`px-3.5 py-[9px] max-w-[180px] truncate text-[12px] text-[#5a6075] ${
+                        idx < displayed.length - 1
+                          ? 'border-b border-[#eef0f4]'
+                          : ''
+                      }`}
+                      title={b.w || '-'}
+                    >
+                      {b.w || '-'}
+                    </td>
+                  )}
                   <td
                     className={`px-3.5 py-[9px] whitespace-nowrap text-[12px] text-[#9aa0b4] ${
                       idx < displayed.length - 1
@@ -291,7 +308,7 @@ export function BacklogTable({ issues, drill, onClearDrill }) {
               {displayed.length === 0 && (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={showWorkspace ? 8 : 7}
                     className="px-3.5 py-8 text-center text-[13px] text-[#8896b0]"
                   >
                     No issues match your filters.

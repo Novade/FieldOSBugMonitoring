@@ -37,7 +37,8 @@ export function ClientBugsPage() {
     setSelected(name);
     setSearch(name);
     setOpen(false);
-    setDrill(null);
+    setDrill({ key: 'all', val: '', label: name });
+    setTimeout(() => backlogRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
   }
 
   function handleClear() {
@@ -236,6 +237,7 @@ export function ClientBugsPage() {
             issues={workspaceIssues}
             drill={drill}
             onClearDrill={() => setDrill(null)}
+            showWorkspace
           />
         </div>
       )}
