@@ -167,6 +167,8 @@ export function ClientBugsPage() {
           />
           {search && (
             <button
+              type="button"
+              aria-label="Clear workspace selection"
               onMouseDown={handleClear}
               className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#6b7a99] hover:text-[#1a1a2e] text-[16px] leading-none"
               tabIndex={-1}
