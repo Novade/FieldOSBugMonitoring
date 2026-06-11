@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { fetchBugs, fetchWorkspaces } from '../services/jiraService';
+import { fetchBugs } from '../services/jiraService';
 
 export function useClientBugsData() {
   const [bugs, setBugs] = useState([]);
@@ -14,10 +14,14 @@ export function useClientBugsData() {
       setLoading(true);
       setError(null);
       try {
-        const [bugsRes, wsRes] = await Promise.all([fetchBugs(), fetchWorkspaces()]);
+        const bugsRes = await fetchBugs();
         if (!cancelled) {
-          setBugs(bugsRes.issues);
-          setWorkspaces(wsRes.workspaces);
+          const issues = bugsRes.issues || [];
+          const ws = Array.from(
+            new Set(issues.map((b) => b.w).filter(Boolean))
+          ).sort((a, b) => a.localeCompare(b));
+          setBugs(issues);
+          setWorkspaces(ws);
         }
       } catch (err) {
         if (!cancelled) setError(err.message);
@@ -27,7 +31,9 @@ export function useClientBugsData() {
     }
 
     load();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return { bugs, workspaces, loading, error };
