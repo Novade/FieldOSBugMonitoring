@@ -10,6 +10,7 @@ module.exports = {
     'created',
     'resolutiondate',
     'customfield_10733', // Deployment Date
+    'customfield_10568', // Workspace Name
   ],
 
   PAGE_SIZE: 100,

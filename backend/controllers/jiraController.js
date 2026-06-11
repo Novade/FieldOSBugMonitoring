@@ -1,7 +1,7 @@
 const axios = require('axios');
 const config = require('../config/env');
 const jiraConfig = require('../config/jira');
-const { transformIssue } = require('../models/issueModel');
+const { transformIssue, extractWorkspaceName } = require('../models/issueModel');
 
 const basicAuth = Buffer.from(
   `${config.jira.userEmail}:${config.jira.apiToken}`
@@ -84,4 +84,38 @@ async function getRegressions(req, res, next) {
   }
 }
 
-module.exports = { getBugs, getRegressions };
+async function getWorkspaceNames(req, res, next) {
+  try {
+    const seen = new Set();
+    let nextPageToken = undefined;
+
+    while (true) {
+      const params = {
+        jql: jiraConfig.BUGS_JQL,
+        fields: 'customfield_10568',
+        maxResults: jiraConfig.PAGE_SIZE,
+      };
+      if (nextPageToken) params.nextPageToken = nextPageToken;
+
+      const response = await jiraClient.get('/search/jql', { params });
+      const { issues, isLast, nextPageToken: token } = response.data;
+
+      for (const issue of issues) {
+        const raw = issue.fields?.customfield_10568;
+        const name = extractWorkspaceName(raw);
+        if (name) seen.add(name);
+      }
+
+      if (isLast || !token || !issues.length) break;
+      nextPageToken = token;
+    }
+
+    const workspaces = Array.from(seen).sort((a, b) => a.localeCompare(b));
+    console.log(`[jira] Fetched ${workspaces.length} workspace names`);
+    res.json({ workspaces });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { getBugs, getRegressions, getWorkspaceNames };
