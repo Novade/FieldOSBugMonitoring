@@ -181,7 +181,16 @@ export function ClientBugsPage() {
               {filtered.map((name) => (
                 <li
                   key={name}
+                  role="option"
+                  aria-selected={selected === name}
+                  tabIndex={0}
                   onMouseDown={() => handleSelect(name)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleSelect(name);
+                    }
+                  }}
                   className={`px-4 py-2 text-[14px] cursor-pointer hover:bg-[#f0f4ff] ${
                     selected === name
                       ? 'text-brand font-medium'
