@@ -38,7 +38,7 @@ export function ClientBugsPage() {
     setSearch(name);
     setOpen(false);
     setDrill({ key: 'all', val: '', label: name });
-    setTimeout(() => backlogRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+    setTimeout(() => workspaceSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
   }
 
   function handleClear() {
@@ -67,7 +67,7 @@ export function ClientBugsPage() {
     setDrill({ key: 'all', val: '', label: name });
     setTimeout(
       () =>
-        backlogRef.current?.scrollIntoView({
+        workspaceSectionRef.current?.scrollIntoView({
           behavior: 'smooth',
           block: 'start',
         }),
@@ -82,7 +82,7 @@ export function ClientBugsPage() {
     setDrill({ key: 'open', val: true, label: 'Open bugs' });
     setTimeout(
       () =>
-        backlogRef.current?.scrollIntoView({
+        workspaceSectionRef.current?.scrollIntoView({
           behavior: 'smooth',
           block: 'start',
         }),
