@@ -1,7 +1,7 @@
 const axios = require('axios');
 const config = require('../config/env');
 const jiraConfig = require('../config/jira');
-const { transformIssue } = require('../models/issueModel');
+const { transformIssue, extractWorkspaceName } = require('../models/issueModel');
 
 const basicAuth = Buffer.from(
   `${config.jira.userEmail}:${config.jira.apiToken}`
@@ -82,22 +82,6 @@ async function getRegressions(req, res, next) {
   } catch (err) {
     next(err);
   }
-}
-
-function toTitleCase(str) {
-  return str.replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
-function extractWorkspaceName(raw) {
-  if (!raw) return null;
-  // IDs are long alphanumeric strings (15+ chars, no spaces) — strip both known formats:
-  //   "Name (Ptc112iuhhbx8j3z1ket9)"  →  trailing parenthetical ID
-  //   "Name - jhdiwnfnmcjedhfdnsi"    →  trailing dash-separated ID
-  const cleaned = raw
-    .replace(/\s*\([a-zA-Z0-9]{15,}\)$/, '')
-    .replace(/\s*-\s*[a-zA-Z0-9]{15,}$/, '')
-    .trim();
-  return toTitleCase(cleaned);
 }
 
 async function getWorkspaceNames(req, res, next) {
