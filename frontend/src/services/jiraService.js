@@ -34,3 +34,12 @@ export async function fetchRegressions() {
     throw new Error(extractError(err));
   }
 }
+
+export async function fetchWorkspaces() {
+  try {
+    const res = await api.get('/api/jira/workspaces');
+    return res.data;
+  } catch (err) {
+    throw new Error(extractError(err));
+  }
+}

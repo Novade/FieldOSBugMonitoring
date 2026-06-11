@@ -84,4 +84,54 @@ async function getRegressions(req, res, next) {
   }
 }
 
-module.exports = { getBugs, getRegressions };
+function toTitleCase(str) {
+  return str.replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function extractWorkspaceName(raw) {
+  if (!raw) return null;
+  // IDs are long alphanumeric strings (15+ chars, no spaces) — strip both known formats:
+  //   "Name (Ptc112iuhhbx8j3z1ket9)"  →  trailing parenthetical ID
+  //   "Name - jhdiwnfnmcjedhfdnsi"    →  trailing dash-separated ID
+  const cleaned = raw
+    .replace(/\s*\([a-zA-Z0-9]{15,}\)$/, '')
+    .replace(/\s*-\s*[a-zA-Z0-9]{15,}$/, '')
+    .trim();
+  return toTitleCase(cleaned);
+}
+
+async function getWorkspaceNames(req, res, next) {
+  try {
+    const seen = new Set();
+    let nextPageToken = undefined;
+
+    while (true) {
+      const params = {
+        jql: jiraConfig.BUGS_JQL,
+        fields: 'customfield_10568',
+        maxResults: jiraConfig.PAGE_SIZE,
+      };
+      if (nextPageToken) params.nextPageToken = nextPageToken;
+
+      const response = await jiraClient.get('/search/jql', { params });
+      const { issues, isLast, nextPageToken: token } = response.data;
+
+      for (const issue of issues) {
+        const raw = issue.fields?.customfield_10568;
+        const name = extractWorkspaceName(raw);
+        if (name) seen.add(name);
+      }
+
+      if (isLast || !token || !issues.length) break;
+      nextPageToken = token;
+    }
+
+    const workspaces = Array.from(seen).sort((a, b) => a.localeCompare(b));
+    console.log(`[jira] Fetched ${workspaces.length} workspace names`);
+    res.json({ workspaces });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { getBugs, getRegressions, getWorkspaceNames };
