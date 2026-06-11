@@ -6,7 +6,6 @@ api.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err.response?.status === 401) {
-      // Session expired — reload to trigger auth redirect
       window.location.href = '/login';
     }
     return Promise.reject(err);
@@ -17,29 +16,51 @@ function extractError(err) {
   return err.response?.data?.error || err.message || 'Unknown error';
 }
 
-export async function fetchBugs() {
-  try {
-    const res = await api.get('/api/jira/bugs');
-    return res.data;
-  } catch (err) {
-    throw new Error(extractError(err));
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const cache = {};
+
+function withCache(key, fn) {
+  const now = Date.now();
+  if (cache[key] && now - cache[key].ts < CACHE_TTL) {
+    return cache[key].promise;
   }
+  const promise = fn();
+  cache[key] = { promise, ts: now };
+  promise.catch(() => {
+    delete cache[key];
+  });
+  return promise;
 }
 
-export async function fetchRegressions() {
-  try {
-    const res = await api.get('/api/jira/regressions');
-    return res.data;
-  } catch (err) {
-    throw new Error(extractError(err));
-  }
+export function fetchBugs() {
+  return withCache('bugs', async () => {
+    try {
+      const res = await api.get('/api/jira/bugs');
+      return res.data;
+    } catch (err) {
+      throw new Error(extractError(err));
+    }
+  });
 }
 
-export async function fetchWorkspaces() {
-  try {
-    const res = await api.get('/api/jira/workspaces');
-    return res.data;
-  } catch (err) {
-    throw new Error(extractError(err));
-  }
+export function fetchRegressions() {
+  return withCache('regressions', async () => {
+    try {
+      const res = await api.get('/api/jira/regressions');
+      return res.data;
+    } catch (err) {
+      throw new Error(extractError(err));
+    }
+  });
+}
+
+export function fetchWorkspaces() {
+  return withCache('workspaces', async () => {
+    try {
+      const res = await api.get('/api/jira/workspaces');
+      return res.data;
+    } catch (err) {
+      throw new Error(extractError(err));
+    }
+  });
 }
