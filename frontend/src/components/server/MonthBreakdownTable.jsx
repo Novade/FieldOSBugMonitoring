@@ -25,7 +25,16 @@ export function MonthBreakdownTable({ allMonths, selectedMonth, onSelectMonth, s
               return (
                 <tr
                   key={m.month}
-                  onClick={() => isClickable && onSelectMonth(m.month)}
+                  role={isClickable ? 'button' : undefined}
+                  tabIndex={isClickable ? 0 : -1}
+                  onClick={isClickable ? () => onSelectMonth(m.month) : undefined}
+                  onKeyDown={(e) => {
+                    if (!isClickable) return;
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      onSelectMonth(m.month);
+                    }
+                  }}
                   className={`border-t border-[#f0f2f5] transition-colors ${
                     isSelected ? 'bg-[#eef2fb]' : isClickable ? 'cursor-pointer hover:bg-[#f7f8fa]' : ''
                   }`}
