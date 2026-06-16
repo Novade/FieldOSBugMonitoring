@@ -134,6 +134,7 @@ async function getHistory(req, res, next) {
             dailyCount: count,
           };
         } catch (err) {
+          if (err.isAdminLabsError && (err.status === 401 || err.status === 403 || err.status === 429 || err.status >= 500)) throw err;
           console.warn(`[adminlabs] Failed to fetch monitor ${id} ${year}/${mm}: ${err.message}`);
           return { monitorId: id, month, error: 'unavailable' };
         }
