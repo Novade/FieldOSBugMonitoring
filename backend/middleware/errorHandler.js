@@ -18,6 +18,14 @@ function resolveClientMessage(err, status) {
     if (status >= 500) return 'Jira is currently unreachable. Please check the JIRA_BASE_URL or try again later.';
     return 'An error occurred while fetching data from Jira.';
   }
+  if (err.isAdminLabsError) {
+    if (status === 401) return 'AdminLabs authentication failed. Check ADMIN_LABS_API_KEY and ADMIN_LABS_ACCOUNT_ID in your .env file.';
+    if (status === 403) return 'Access denied by AdminLabs. Verify your account ID and API key permissions.';
+    if (status === 429) return 'AdminLabs rate limit exceeded. Please wait a moment and try again.';
+    if (status === 404) return 'Monitor not found in AdminLabs. The monitor ID may be incorrect.';
+    if (status >= 500) return 'AdminLabs is currently unreachable. Please try again later.';
+    return 'An error occurred while fetching data from AdminLabs.';
+  }
   if (err.isOAuthError) return err.message;
   if (status === 401) return 'Not authenticated. Please log in.';
   if (status === 400) return err.message || 'Bad request.';

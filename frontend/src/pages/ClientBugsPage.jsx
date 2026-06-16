@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useClientBugsData } from '../hooks/useClientBugsData';
 import { Card } from '../components/common/Card';
+import { Spinner } from '../components/common/Spinner';
 import { KpiRow } from '../components/kpi/KpiRow';
 import { BacklogTable } from '../components/backlog/BacklogTable';
 import { WeeklyCreatedVsResolvedChart } from '../components/charts/WeeklyCreatedVsResolvedChart';
@@ -60,16 +61,7 @@ export function ClientBugsPage() {
 
   const workspaceIssues = selected ? bugs.filter((b) => b.w.includes(selected)) : [];
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="inline-block w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin mb-4" />
-          <p className="text-[14px] text-[#6b7a99]">Loading client bugs…</p>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <Spinner label="Loading client bugs…" />;
 
   return (
     <div className="max-w-[1380px] mx-auto px-7 py-6">

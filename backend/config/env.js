@@ -33,6 +33,10 @@ module.exports = {
     userEmail: process.env.JIRA_USER_EMAIL,
     apiToken: process.env.JIRA_API_TOKEN,
   },
+  adminLabs: {
+    apiKey: process.env.ADMIN_LABS_API_KEY,
+    accountId: process.env.ADMIN_LABS_ACCOUNT_ID,
+  },
   session: {
     secret: process.env.SESSION_SECRET,
   },
