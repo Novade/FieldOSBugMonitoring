@@ -10,7 +10,7 @@ import { ServerKpiRow } from '../components/server/ServerKpiRow';
 import { YearOverYearChart } from '../components/charts/YearOverYearChart';
 import { MonthBreakdownTable } from '../components/server/MonthBreakdownTable';
 import { DayBreakdownTable } from '../components/server/DayBreakdownTable';
-
+import { Spinner } from '../components/common/Spinner';
 export function ServerPage() {
   const {
     monitors,
