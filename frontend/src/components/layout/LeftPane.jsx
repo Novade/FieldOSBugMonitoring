@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Bug, Building2 } from 'lucide-react';
+import { Bug, Building2, LayoutDashboard } from 'lucide-react';
 
 const NAV_ITEMS = [
   {
@@ -9,10 +9,16 @@ const NAV_ITEMS = [
     matchPrefixes: ['/bugs', '/regression'],
   },
   {
-    label: 'Client Bugs',
+    label: 'Workspace (Global)',
+    icon: LayoutDashboard,
+    path: '/workspace/global',
+    matchPrefixes: ['/workspace/global'],
+  },
+  {
+    label: 'Workspace (Per Client)',
     icon: Building2,
-    path: '/client-bugs',
-    matchPrefixes: ['/client-bugs'],
+    path: '/workspace/per-client',
+    matchPrefixes: ['/workspace/per-client'],
   },
 ];
 
@@ -21,7 +27,7 @@ export function LeftPane() {
   const navigate = useNavigate();
 
   return (
-    <div className="w-48 bg-white border-r flex flex-col">
+    <div className="w-50 bg-white border-r flex flex-col">
       <nav className="flex flex-col gap-1 pt-3 px-2">
         {NAV_ITEMS.map(({ label, icon: Icon, path, matchPrefixes }) => {
           const isActive = matchPrefixes.some((p) => pathname.startsWith(p));

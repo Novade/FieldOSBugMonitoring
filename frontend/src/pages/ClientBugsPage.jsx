@@ -3,9 +3,6 @@ import { useClientBugsData } from '../hooks/useClientBugsData';
 import { Card } from '../components/common/Card';
 import { KpiRow } from '../components/kpi/KpiRow';
 import { BacklogTable } from '../components/backlog/BacklogTable';
-import { TopWorkspacesByTotalChart } from '../components/charts/TopWorkspacesByTotalChart';
-import { WorkspaceBugDistributionChart } from '../components/charts/WorkspaceBugDistributionChart';
-import { TopWorkspacesByOpenChart } from '../components/charts/TopWorkspacesByOpenChart';
 import { WeeklyCreatedVsResolvedChart } from '../components/charts/WeeklyCreatedVsResolvedChart';
 import { PriorityChart } from '../components/charts/PriorityChart';
 
@@ -60,37 +57,8 @@ export function ClientBugsPage() {
     );
   }
 
-  function handleSelectFromChart(name) {
-    setSelected(name);
-    setSearch(name);
-    setOpen(false);
-    setDrill({ key: 'all', val: '', label: name });
-    setTimeout(
-      () =>
-        workspaceSectionRef.current?.scrollIntoView({
-          behavior: 'smooth',
-          block: 'start',
-        }),
-      50
-    );
-  }
 
-  function handleSelectFromOpenChart(name) {
-    setSelected(name);
-    setSearch(name);
-    setOpen(false);
-    setDrill({ key: 'open', val: true, label: 'Open bugs' });
-    setTimeout(
-      () =>
-        workspaceSectionRef.current?.scrollIntoView({
-          behavior: 'smooth',
-          block: 'start',
-        }),
-      50
-    );
-  }
-
-  const workspaceIssues = selected ? bugs.filter((b) => b.w === selected) : [];
+  const workspaceIssues = selected ? bugs.filter((b) => b.w.includes(selected)) : [];
 
   if (loading) {
     return (
@@ -106,46 +74,6 @@ export function ClientBugsPage() {
   return (
     <div className="max-w-[1380px] mx-auto px-7 py-6">
       {error && <p className="text-red-500 text-[13px] mb-4">{error}</p>}
-
-      {/* Global charts — always visible */}
-      <div className="grid grid-cols-3 max-[1100px]:grid-cols-1 gap-4 mb-8">
-        <Card
-          accent="blue"
-          title="Top Workspaces by Total Bugs"
-          subtitle="All bugs created since Jan 2026"
-        >
-          <div style={{ height: 280 }}>
-            <TopWorkspacesByTotalChart
-              issues={bugs}
-              onSelectWorkspace={handleSelectFromChart}
-            />
-          </div>
-        </Card>
-        <Card
-          accent="purple"
-          title="Bug Distribution by Workspace"
-          subtitle="Share of total bugs across all workspaces"
-        >
-          <div style={{ height: 280 }}>
-            <WorkspaceBugDistributionChart
-              issues={bugs}
-              onSelectWorkspace={handleSelectFromChart}
-            />
-          </div>
-        </Card>
-        <Card
-          accent="amber"
-          title="Top Workspaces by Open Bugs"
-          subtitle="Click a bar to jump to that workspace"
-        >
-          <div style={{ height: 280 }}>
-            <TopWorkspacesByOpenChart
-              issues={bugs}
-              onSelectWorkspace={handleSelectFromOpenChart}
-            />
-          </div>
-        </Card>
-      </div>
 
       {/* Workspace selector */}
       <div className="flex flex-col items-center mb-8">
@@ -241,17 +169,15 @@ export function ClientBugsPage() {
         </div>
       </div>
 
-      {/* Inline backlog — appears when any chart or KPI is clicked */}
-      {drill && (
-        <div ref={backlogRef} className="mt-4">
-          <BacklogTable
-            issues={workspaceIssues}
-            drill={drill}
-            onClearDrill={() => setDrill(null)}
-            showWorkspace
-          />
-        </div>
-      )}
+      {/* Backlog — always visible */}
+      <div ref={backlogRef} className="mt-4">
+        <BacklogTable
+          issues={workspaceIssues}
+          drill={drill}
+          onClearDrill={() => setDrill(null)}
+          showWorkspace
+        />
+      </div>
     </div>
   );
 }

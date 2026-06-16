@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { StatusPill, PriorityPill } from '../common/Pill';
 import { DrillBadge } from './DrillBadge';
 import { FilterBar } from './FilterBar';
@@ -8,7 +8,7 @@ import { PSORT } from '../../constants/jira';
 
 const JIRA_BASE = 'https://novade.atlassian.net/browse';
 
-const INITIAL_FILTERS = { search: '', priority: '', status: '', assignee: '' };
+const INITIAL_FILTERS = { search: '', priority: [], status: [], assignee: [], reg: [], os: [] };
 
 function drillToFilterField(drill) {
   if (!drill) return null;
@@ -45,6 +45,14 @@ function applyDrill(data, drill) {
       return data.filter((b) => b.r && ws(b.r) <= drill.val);
     case 'assignee_open':
       return data.filter((b) => isOpen(b) && b.a === drill.val);
+    case 'workspace':
+      return data.filter((b) => b.w.includes(drill.val));
+    case 'workspace_open':
+      return data.filter((b) => b.w.includes(drill.val) && isOpen(b));
+    case 'reg':
+      return data.filter((b) => b.reg?.includes(drill.val));
+    case 'os':
+      return data.filter((b) => b.os?.includes(drill.val));
     case 'age': {
       const ranges = [
         [0, 7],
@@ -93,19 +101,36 @@ export function BacklogTable({ issues, drill, onClearDrill, showWorkspace = fals
     }
   }
 
+  useEffect(() => {
+    if (!drill) return;
+    if (drill.key === 'reg') {
+      setFilters((prev) => ({ ...prev, reg: [drill.val] }));
+    } else if (drill.key === 'os') {
+      setFilters((prev) => ({ ...prev, os: [drill.val] }));
+    } else if (drill.key === 'p') {
+      setFilters((prev) => ({ ...prev, priority: [drill.val] }));
+    } else if (drill.key === 'assignee_open') {
+      setFilters((prev) => ({ ...prev, assignee: [drill.val] }));
+    } else if (drill.key === 'blocked') {
+      setFilters((prev) => ({ ...prev, status: ['Blocked'] }));
+    }
+  }, [drill?.key, drill?.val]);
+
   const displayed = useMemo(() => {
     let data = applyDrill([...issues], drill);
 
-    const { search, priority, status, assignee } = filters;
+    const { search, priority, status, assignee, reg, os } = filters;
     if (search)
       data = data.filter(
         (b) =>
           b.k.toLowerCase().includes(search) ||
           b.s.toLowerCase().includes(search)
       );
-    if (priority) data = data.filter((b) => b.p === priority);
-    if (status) data = data.filter((b) => b.st === status);
-    if (assignee) data = data.filter((b) => b.a === assignee);
+    if (priority.length) data = data.filter((b) => priority.includes(b.p));
+    if (status.length) data = data.filter((b) => status.includes(b.st));
+    if (assignee.length) data = data.filter((b) => assignee.includes(b.a));
+    if (reg.length) data = data.filter((b) => b.reg?.some((r) => reg.includes(r)));
+    if (os.length) data = data.filter((b) => b.os?.some((o) => os.includes(o)));
 
     if (drill?.key === 'blocked' && !sortCol) {
       data = [...data].sort((a, b) => (PSORT[a.p] ?? 99) - (PSORT[b.p] ?? 99));
@@ -142,38 +167,6 @@ export function BacklogTable({ issues, drill, onClearDrill, showWorkspace = fals
   return (
     <div>
       <DrillBadge drill={drill} onClear={handleClear} />
-      {[
-        filters.priority && {
-          key: 'priority',
-          label: `Priority: ${filters.priority}`,
-        },
-        filters.status && { key: 'status', label: `Status: ${filters.status}` },
-        filters.assignee && {
-          key: 'assignee',
-          label: `Assignee: ${filters.assignee}`,
-        },
-        filters.search && {
-          key: 'search',
-          label: `Search: "${filters.search}"`,
-        },
-      ]
-        .filter(Boolean)
-        .map(({ key, label }) => (
-          <div
-            key={key}
-            className="inline-flex items-center gap-1.5 bg-[#eef2fb] text-[#2d5a9e] px-3 py-1 rounded-[20px] text-[12px] font-medium mb-3 border border-[#c5d3f0] mr-1.5"
-          >
-            <span>
-              <strong>{label}</strong>
-            </span>
-            <button
-              onClick={() => handleFilterChange(key, '')}
-              className="bg-none border-none cursor-pointer text-[#2d5a9e] text-sm leading-none ml-0.5"
-            >
-              ×
-            </button>
-          </div>
-        ))}
       <FilterBar
         issues={issues}
         filters={filters}
@@ -280,9 +273,9 @@ export function BacklogTable({ issues, drill, onClearDrill, showWorkspace = fals
                           ? 'border-b border-[#eef0f4]'
                           : ''
                       }`}
-                      title={b.w || '-'}
+                      title={b.w?.length ? b.w.join(' & ') : '-'}
                     >
-                      {b.w || '-'}
+                      {b.w?.length ? b.w.join(' & ') : '-'}
                     </td>
                   )}
                   <td

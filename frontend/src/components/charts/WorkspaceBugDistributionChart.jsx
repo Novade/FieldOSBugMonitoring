@@ -1,6 +1,8 @@
 import { useMemo } from 'react';
 import { Doughnut } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
+import { TOOLTIP_DEFAULTS } from '../../constants/chartDefaults';
+import { makeDonutValueLabelsPlugin } from '../../utils/chartPlugins';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -9,50 +11,14 @@ const COLORS = [
   '#6d28d9', '#0891b2', '#7a0000', '#047857', '#94a3b8',
 ];
 
-const TOOLTIP_DEFAULTS = {
-  backgroundColor: 'rgba(20,35,65,.95)',
-  titleColor: '#e2e5ed',
-  bodyColor: '#c8ccda',
-  borderColor: 'rgba(255,255,255,.12)',
-  borderWidth: 1,
-  padding: { top: 10, bottom: 10, left: 12, right: 12 },
-  titleFont: { size: 12, weight: '600' },
-  bodyFont: { size: 12 },
-  cornerRadius: 8,
-};
-
-const donutValueLabels = {
-  id: 'donutValueLabels',
-  afterDraw(chart) {
-    const { ctx } = chart;
-    chart.data.datasets.forEach((dataset, i) => {
-      chart.getDatasetMeta(i).data.forEach((arc, index) => {
-        const value = dataset.data[index];
-        if (!value) return;
-        const angle = arc.endAngle - arc.startAngle;
-        if (angle < 0.3) return; // skip slices too small to fit text
-        const midAngle = arc.startAngle + angle / 2;
-        const r = (arc.outerRadius + arc.innerRadius) / 2;
-        const x = arc.x + r * Math.cos(midAngle);
-        const y = arc.y + r * Math.sin(midAngle);
-        ctx.save();
-        ctx.font = 'bold 10px sans-serif';
-        ctx.fillStyle = '#fff';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(value, x, y);
-        ctx.restore();
-      });
-    });
-  },
-};
+const donutValueLabels = makeDonutValueLabelsPlugin('donutValueLabels');
 
 export function WorkspaceBugDistributionChart({ issues, onSelectWorkspace }) {
   const { labels, datasets } = useMemo(() => {
     const counts = {};
     issues.forEach((b) => {
-      if (!b.w) return;
-      counts[b.w] = (counts[b.w] || 0) + 1;
+      if (!b.w?.length) return;
+      b.w.forEach((ws) => { counts[ws] = (counts[ws] || 0) + 1; });
     });
     const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
     const top = sorted.slice(0, 8);

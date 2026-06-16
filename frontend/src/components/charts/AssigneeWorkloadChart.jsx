@@ -1,5 +1,6 @@
 import { useMemo, useRef } from 'react';
 import { Bar } from 'react-chartjs-2';
+import { TOOLTIP_DEFAULTS } from '../../constants/chartDefaults';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -22,18 +23,6 @@ ChartJS.register(
   Legend
 );
 
-const TOOLTIP_DEFAULTS = {
-  backgroundColor: 'rgba(20,35,65,.95)',
-  titleColor: '#e2e5ed',
-  bodyColor: '#c8ccda',
-  borderColor: 'rgba(255,255,255,.12)',
-  borderWidth: 1,
-  padding: { top: 10, bottom: 10, left: 12, right: 12 },
-  titleFont: { size: 12, weight: '600' },
-  bodyFont: { size: 12 },
-  cornerRadius: 8,
-  caretSize: 5,
-};
 
 export function AssigneeWorkloadChart({ issues, onDrillTo }) {
   const chartRef = useRef(null);
@@ -78,6 +67,7 @@ export function AssigneeWorkloadChart({ issues, onDrillTo }) {
       legend: { display: false },
       tooltip: {
         ...TOOLTIP_DEFAULTS,
+        caretSize: 5,
         mode: 'index',
         intersect: false,
         callbacks: {

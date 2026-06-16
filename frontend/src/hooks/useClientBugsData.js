@@ -18,7 +18,7 @@ export function useClientBugsData() {
         if (!cancelled) {
           const issues = bugsRes.issues || [];
           const ws = Array.from(
-            new Set(issues.map((b) => b.w).filter(Boolean))
+            new Set(issues.flatMap((b) => b.w).filter(Boolean))
           ).sort((a, b) => a.localeCompare(b));
           setBugs(issues);
           setWorkspaces(ws);

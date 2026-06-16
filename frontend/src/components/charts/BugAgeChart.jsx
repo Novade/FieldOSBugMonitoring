@@ -37,7 +37,7 @@ export function BugAgeChart({ issues, onDrillTo }) {
     },
     interaction: { mode: 'index', intersect: false },
     onClick: (_, els) => {
-      if (els?.length) {
+      if (els?.length && onDrillTo) {
         onDrillTo('age', els[0].index, `Open bugs — ${AGE_BUCKETS[els[0].index]}`);
       }
     },

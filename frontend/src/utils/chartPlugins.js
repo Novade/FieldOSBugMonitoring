@@ -66,6 +66,58 @@ const deployTargetsPlugin = {
   },
 };
 
+// Factory: renders value labels inside each doughnut arc
+export function makeDonutValueLabelsPlugin(id) {
+  return {
+    id,
+    afterDraw(chart) {
+      const { ctx } = chart;
+      chart.data.datasets.forEach((dataset, i) => {
+        chart.getDatasetMeta(i).data.forEach((arc, index) => {
+          const value = dataset.data[index];
+          if (!value) return;
+          const angle = arc.endAngle - arc.startAngle;
+          if (angle < 0.3) return;
+          const midAngle = arc.startAngle + angle / 2;
+          const r = (arc.outerRadius + arc.innerRadius) / 2;
+          const x = arc.x + r * Math.cos(midAngle);
+          const y = arc.y + r * Math.sin(midAngle);
+          ctx.save();
+          ctx.font = 'bold 10px sans-serif';
+          ctx.fillStyle = '#fff';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(value, x, y);
+          ctx.restore();
+        });
+      });
+    },
+  };
+}
+
+// Factory: renders value labels to the right of each horizontal bar
+export function makeBarValueLabelsPlugin(id) {
+  return {
+    id,
+    afterDraw(chart) {
+      const { ctx } = chart;
+      chart.data.datasets.forEach((dataset, i) => {
+        chart.getDatasetMeta(i).data.forEach((bar, index) => {
+          const value = dataset.data[index];
+          if (!value) return;
+          ctx.save();
+          ctx.font = '600 10px sans-serif';
+          ctx.fillStyle = '#4a5568';
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(value, bar.x + 4, bar.y);
+          ctx.restore();
+        });
+      });
+    },
+  };
+}
+
 let registered = false;
 export function registerChartPlugins() {
   if (registered) return;

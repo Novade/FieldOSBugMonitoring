@@ -1,7 +1,7 @@
 const axios = require('axios');
 const config = require('../config/env');
 const jiraConfig = require('../config/jira');
-const { transformIssue, extractWorkspaceName } = require('../models/issueModel');
+const { transformIssue, extractWorkspaceNames } = require('../models/issueModel');
 
 const basicAuth = Buffer.from(
   `${config.jira.userEmail}:${config.jira.apiToken}`
@@ -102,8 +102,8 @@ async function getWorkspaceNames(req, res, next) {
 
       for (const issue of issues) {
         const raw = issue.fields?.customfield_10568;
-        const name = extractWorkspaceName(raw);
-        if (name) seen.add(name);
+        const names = extractWorkspaceNames(raw);
+        names.forEach((name) => seen.add(name));
       }
 
       if (isLast || !token || !issues.length) break;
