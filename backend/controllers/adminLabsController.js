@@ -191,6 +191,7 @@ async function getDaily(req, res, next) {
           const r = await adminLabsClient.get(`/monitors/${id}/history/${year}/${mm}`);
           return Array.isArray(r.data) ? r.data : [];
         } catch (err) {
+          if (err.isAdminLabsError && (err.status === 401 || err.status === 403 || err.status === 429 || err.status >= 500)) throw err;
           console.warn(`[adminlabs] getDaily failed monitor ${id} ${year}/${mm}: ${err.message}`);
           return [];
         }
