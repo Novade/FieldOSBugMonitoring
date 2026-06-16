@@ -7,6 +7,7 @@ import { MainLayout } from './components/layout/MainLayout';
 import { AllBugsPage } from './pages/AllBugsPage';
 import { ClientBugsPage } from './pages/ClientBugsPage';
 import { WorkspaceGlobalPage } from './pages/WorkspaceGlobalPage';
+import { ServerPage } from './pages/ServerPage';
 
 registerChartPlugins();
 
@@ -34,6 +35,7 @@ export default function App() {
                   <Route path="client-bugs" element={<Navigate to="/workspace/per-client" replace />} />
                   <Route path="workspace/global" element={<WorkspaceGlobalPage />} />
                   <Route path="workspace/per-client" element={<ClientBugsPage />} />
+                  <Route path="server" element={<ServerPage />} />
                 </Routes>
               </MainLayout>
             </ProtectedRoute>

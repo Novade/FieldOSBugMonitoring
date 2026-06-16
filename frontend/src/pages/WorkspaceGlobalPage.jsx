@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { useClientBugsData } from '../hooks/useClientBugsData';
 import { Card } from '../components/common/Card';
+import { Spinner } from '../components/common/Spinner';
 import { BacklogTable } from '../components/backlog/BacklogTable';
 import { TopWorkspacesByTotalChart } from '../components/charts/TopWorkspacesByTotalChart';
 import { WorkspaceBugDistributionChart } from '../components/charts/WorkspaceBugDistributionChart';
@@ -18,16 +19,7 @@ export function WorkspaceGlobalPage() {
     setTimeout(() => backlogRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="inline-block w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin mb-4" />
-          <p className="text-[14px] text-[#6b7a99]">Loading data…</p>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <Spinner label="Loading data…" />;
 
   return (
     <div className="max-w-[1380px] mx-auto px-7 py-6">

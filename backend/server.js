@@ -6,6 +6,7 @@ const cors = require('cors');
 
 const authRoutes = require('./routes/authRoutes');
 const jiraRoutes = require('./routes/jiraRoutes');
+const adminLabsRoutes = require('./routes/adminLabsRoutes');
 const { errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
@@ -40,6 +41,7 @@ app.use(
 
 app.use('/auth', authRoutes);
 app.use('/api/jira', jiraRoutes);
+app.use('/api/adminlabs', adminLabsRoutes);
 
 // Health check
 app.get('/health', (req, res) => res.json({ ok: true }));

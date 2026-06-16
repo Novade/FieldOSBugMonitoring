@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Bug, Building2, LayoutDashboard } from 'lucide-react';
+import { Bug, Building2, LayoutDashboard, Server } from 'lucide-react';
 
 const NAV_ITEMS = [
   {
@@ -19,6 +19,12 @@ const NAV_ITEMS = [
     icon: Building2,
     path: '/workspace/per-client',
     matchPrefixes: ['/workspace/per-client'],
+  },
+  {
+    label: 'Server',
+    icon: Server,
+    path: '/server',
+    matchPrefixes: ['/server'],
   },
 ];
 
