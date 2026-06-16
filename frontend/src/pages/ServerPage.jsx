@@ -75,16 +75,7 @@ export function ServerPage() {
     : null;
   const days = dailyData?.days ?? [];
 
-  if (loading && !data) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="inline-block w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin mb-4" />
-          <p className="text-[14px] text-[#6b7a99]">Loading server data…</p>
-        </div>
-      </div>
-    );
-  }
+  if (loading && !data) return <Spinner label="Loading server data…" />;
 
   return (
     <div className="max-w-[1380px] mx-auto px-7 py-6">
