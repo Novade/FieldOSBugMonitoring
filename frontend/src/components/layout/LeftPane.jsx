@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Bug, Building2, LayoutDashboard, Server } from 'lucide-react';
+import { Bug, Building2, GitMerge, LayoutDashboard, Server } from 'lucide-react';
 
 const NAV_ITEMS = [
   {
@@ -25,6 +25,12 @@ const NAV_ITEMS = [
     icon: Server,
     path: '/server',
     matchPrefixes: ['/server'],
+  },
+  {
+    label: 'PR Cycles',
+    icon: GitMerge,
+    path: '/pr-cycles',
+    matchPrefixes: ['/pr-cycles'],
   },
 ];
 

@@ -43,6 +43,13 @@ export function workingDays(startStr, endStr) {
   return Math.max(0, days - 1);
 }
 
+// Formats a duration in hours as "Xm" (under 1h) or "X.Xh" — null/undefined -> "—"
+export function formatHoursShort(hours) {
+  if (hours == null) return '—';
+  if (hours < 1) return `${Math.round(hours * 60)}m`;
+  return `${hours.toFixed(1)}h`;
+}
+
 export function formatSyncTime(isoString) {
   const d = new Date(isoString);
   const month = d.toLocaleString('en-US', { month: 'short' });

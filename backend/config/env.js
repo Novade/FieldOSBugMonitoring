@@ -9,6 +9,8 @@ const REQUIRED = [
   'JIRA_USER_EMAIL',
   'JIRA_API_TOKEN',
   'SESSION_SECRET',
+  'GITHUB_TOKEN',
+  'GITHUB_ORG',
 ];
 
 const missing = REQUIRED.filter((key) => !process.env[key]);
@@ -36,6 +38,10 @@ module.exports = {
   adminLabs: {
     apiKey: process.env.ADMIN_LABS_API_KEY,
     accountId: process.env.ADMIN_LABS_ACCOUNT_ID,
+  },
+  github: {
+    token: process.env.GITHUB_TOKEN,
+    org: process.env.GITHUB_ORG,
   },
   session: {
     secret: process.env.SESSION_SECRET,

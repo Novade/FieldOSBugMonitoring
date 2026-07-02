@@ -8,6 +8,7 @@ import { AllBugsPage } from './pages/AllBugsPage';
 import { ClientBugsPage } from './pages/ClientBugsPage';
 import { WorkspaceGlobalPage } from './pages/WorkspaceGlobalPage';
 import { ServerPage } from './pages/ServerPage';
+import { PRCyclePage } from './pages/PRCyclePage';
 
 registerChartPlugins();
 
@@ -36,6 +37,7 @@ export default function App() {
                   <Route path="workspace/global" element={<WorkspaceGlobalPage />} />
                   <Route path="workspace/per-client" element={<ClientBugsPage />} />
                   <Route path="server" element={<ServerPage />} />
+                  <Route path="pr-cycles" element={<PRCyclePage />} />
                 </Routes>
               </MainLayout>
             </ProtectedRoute>
