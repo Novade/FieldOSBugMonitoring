@@ -109,8 +109,9 @@ const OPEN_TTL = githubConfig.cacheTtl.openPrs;
 // Linear interpolation method — matches Excel PERCENTILE.INC and
 // industry tools (LinearB, Swarmia, DORA).
 function percentile(arr, p) {
-  if (!arr.length) return 0;
-  const sorted = [...arr].sort((a, b) => a - b);
+  const nums = (arr || []).filter((n) => Number.isFinite(n));
+  if (!nums.length) return null;
+  const sorted = [...nums].sort((a, b) => a - b);
   if (sorted.length === 1) return parseFloat(sorted[0].toFixed(2));
   const pos = (p / 100) * (sorted.length - 1);
   const lo = Math.floor(pos);
