@@ -17,9 +17,22 @@ const MAX_TRANSIENT_RETRIES = 3;
 ghGraphQL.interceptors.response.use(
   (res) => res,
   async (err) => {
-    if (err.response?.status === 403 || err.response?.status === 429) {
+    const status = err.response?.status;
+    const isRateLimited =
+      status === 429 ||
+      (status === 403 && err.response?.headers?.['x-ratelimit-remaining'] === '0') ||
+      (status === 403 && err.response?.headers?.['retry-after']);
+    if (isRateLimited) {
+      const retryCount = (err.config.__rateLimitRetryCount || 0) + 1;
+      if (retryCount > MAX_TRANSIENT_RETRIES) {
+        const e = new Error('GitHub rate limit exceeded. Please try again later.');
+        e.isGitHubError = true;
+        e.status = 429;
+        return Promise.reject(e);
+      }
+      err.config.__rateLimitRetryCount = retryCount;
       const retryAfter = parseInt(err.response.headers['retry-after'] || '60', 10);
-      console.warn(`[github] rate limited — waiting ${retryAfter}s before retry`);
+      console.warn(`[github] rate limited — waiting ${retryAfter}s before retry (${retryCount}/${MAX_TRANSIENT_RETRIES})`);
       await new Promise((r) => setTimeout(r, retryAfter * 1000));
       return ghGraphQL(err.config);
     }
