@@ -7,6 +7,7 @@ const cors = require('cors');
 const authRoutes = require('./routes/authRoutes');
 const jiraRoutes = require('./routes/jiraRoutes');
 const adminLabsRoutes = require('./routes/adminLabsRoutes');
+const githubRoutes = require('./routes/githubRoutes');
 const { errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
@@ -42,6 +43,7 @@ app.use(
 app.use('/auth', authRoutes);
 app.use('/api/jira', jiraRoutes);
 app.use('/api/adminlabs', adminLabsRoutes);
+app.use('/api/github', githubRoutes);
 
 // Health check
 app.get('/health', (req, res) => res.json({ ok: true }));

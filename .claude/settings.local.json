@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm -v)"
+      "Bash(npm -v)",
+      "WebFetch(domain:help.swarmia.com)",
+      "Bash(node -e ' *)",
+      "WebSearch",
+      "Bash(node --check controllers/githubController.js)"
     ]
   }
 }

@@ -28,3 +28,7 @@ Thumbs.db
 
 # Runtime
 *.pid
+
+# Generated data exports
+backend/pr_export.csv
+backend/scripts/

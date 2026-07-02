@@ -1,10 +1,16 @@
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { formatSyncTime } from '../../utils/dateUtils';
 import Logo from '../../assets/logo.svg?react';
 
+// Pages that show their own inline "last sync" label instead of the TopBar one
+const OWN_SYNC_LABEL_PREFIXES = ['/pr-cycles'];
+
 export function TopBar({ fetchedAt }) {
   const { user, logout } = useAuth();
-  const syncLabel = fetchedAt ? formatSyncTime(fetchedAt) : null;
+  const { pathname } = useLocation();
+  const hideForRoute = OWN_SYNC_LABEL_PREFIXES.some((p) => pathname.startsWith(p));
+  const syncLabel = fetchedAt && !hideForRoute ? formatSyncTime(fetchedAt) : null;
 
   return (
     <div className="flex items-center justify-between px-7 py-2 bg-brand border-b border-brand-dark flex-wrap gap-2.5">
