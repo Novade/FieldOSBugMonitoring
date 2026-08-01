@@ -3,6 +3,9 @@ import { OPEN_STATUSES, DEPLOY_STATUSES } from '../constants/jira';
 export const isOpen = (b) => OPEN_STATUSES.has(b.st);
 export const isDeploy = (b) => DEPLOY_STATUSES.has(b.st);
 export const isResolved = (b) => b.st === 'Done' && !!b.r;
+export const isDeployed = (b) => b.st === 'Done' && !!b.d;
+export const hasNoActionDoneLabel = (b) => !!b.l?.includes('no-action-done');
+export const needsDeployment = (b) => b.st === 'Done' && !hasNoActionDoneLabel(b) && !b.d;
 
 export function pillStatus(s) {
   if (s === 'Done') return 'bg-[#e6f4ed] text-[#1a6641]';

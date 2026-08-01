@@ -8,6 +8,7 @@ import { DeploymentTargetTable } from '../charts/DeploymentTargetTable';
 import { WeeklyPriorityChart } from '../charts/WeeklyPriorityChart';
 import { CumulativeBandChart } from '../charts/CumulativeBandChart';
 import { WeeklyCreatedVsResolvedChart } from '../charts/WeeklyCreatedVsResolvedChart';
+import { WeeklyCreatedVsDeployedChart } from '../charts/WeeklyCreatedVsDeployedChart';
 import { CumulativeCreatedVsResolvedChart } from '../charts/CumulativeCreatedVsResolvedChart';
 
 export function BugsDashboard({ issues, onDrillTo }) {
@@ -51,6 +52,10 @@ export function BugsDashboard({ issues, onDrillTo }) {
 
       <Card accent="slate" title="Cumulative created vs resolved" subtitle="Gap = active backlog. When lines meet, team is clear" className="mb-4">
         <CumulativeCreatedVsResolvedChart issues={issues} onDrillTo={onDrillTo} />
+      </Card>
+
+      <Card accent="slate" title="Weekly created vs deployed" subtitle="Bugs created vs actually deployed to prod, per week (1-week buckets to surface hotfixes)" className="mb-4">
+        <WeeklyCreatedVsDeployedChart issues={issues} onDrillTo={onDrillTo} />
       </Card>
     </div>
   );

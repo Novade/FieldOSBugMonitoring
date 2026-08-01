@@ -2,20 +2,26 @@ import { Tooltip } from '../common/Tooltip';
 
 const ACCENT = {
   created: 'before:bg-[#3b6cb7]',
+  createdValid: 'before:bg-[#7c3aed]',
   resolved: 'before:bg-[#2e7d5e]',
+  deployed: 'before:bg-[#16a34a]',
   open: 'before:bg-[#d97706]',
   blocked: 'before:bg-[#c0392b]',
   deploy: 'before:bg-[#6d28d9]',
+  pendingDeployment: 'before:bg-[#b45309]',
 };
 
 export function KpiCard({
   type = 'created',
   label,
+  labelLines,
   value,
   sub,
   warn,
   onClick,
   showTooltip,
+  tooltipLabel,
+  tooltipContent,
   group = 'primary',
 }) {
   const accent = ACCENT[type] || ACCENT.created;
@@ -38,9 +44,21 @@ export function KpiCard({
         before:content-[''] before:absolute before:top-0 before:left-0 before:right-0 before:h-[3px] before:rounded-t-lg ${accent}
         ${sizeClass}`}
     >
-      <div className="text-[12px] font-semibold uppercase tracking-[.5px] mb-3 flex items-center gap-1">
-        {label}
-        {showTooltip && <Tooltip label="Counted as open" />}
+      <div className="text-[12px] leading-[16px] font-semibold uppercase tracking-[.5px] mb-3 flex items-start gap-1 min-h-[32px]">
+        {labelLines ? (
+          <span>
+            {labelLines.map((line, i) => (
+              <span key={i} className="block">
+                {line}
+              </span>
+            ))}
+          </span>
+        ) : (
+          label
+        )}
+        {showTooltip && (
+          <Tooltip label={tooltipLabel ?? 'Counted as open'} note={tooltipContent} />
+        )}
       </div>
       <div className={`text-[25px] font-bold ${valueColor}`}>
         {value ?? '-'}

@@ -9,6 +9,7 @@ module.exports = {
     'assignee',
     'created',
     'resolutiondate',
+    'labels',
     'customfield_10733', // Deployment Date
     'customfield_10568', // Workspace Name
     'customfield_10577', // Region

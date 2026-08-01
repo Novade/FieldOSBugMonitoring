@@ -10,6 +10,11 @@ const FILTER_FIELDS = [
   { key: 'os', label: 'OS' },
 ];
 
+const BOOLEAN_FILTERS = [
+  { key: 'noActionDone', label: 'No Action Done' },
+  { key: 'pendingDeployment', label: 'Validated, pending deployment' },
+];
+
 function toggle(arr, val) {
   return arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val];
 }
@@ -59,6 +64,24 @@ function FilterPanel({ open, onClose, filters, onFilterChange, fieldOptions, loc
               {count > 0 && (
                 <span className="text-[11px] text-brand font-semibold">{count}</span>
               )}
+            </button>
+          );
+        })}
+        <div className="my-1 mx-2 border-t border-[#dde2ea]" />
+        {BOOLEAN_FILTERS.map((f) => {
+          const active = !!filters[f.key];
+          return (
+            <button
+              key={f.key}
+              onClick={() => onFilterChange(f.key, !filters[f.key])}
+              className={`w-full text-left px-4 py-2 text-[13px] flex items-center justify-between transition-colors
+                ${active
+                  ? 'bg-[#eef2fb] text-brand font-semibold'
+                  : 'text-[#1a2332] hover:bg-[#f5f7fa]'
+                }`}
+            >
+              {f.label}
+              {active && <span className="text-[11px] text-brand font-semibold">✓</span>}
             </button>
           );
         })}
@@ -121,7 +144,9 @@ export function FilterBar({ issues, filters, onFilterChange, onClear, lockedFiel
     os: OS_ALL,
   };
 
-  const activeCount = FILTER_FIELDS.reduce((sum, f) => sum + (filters[f.key]?.length ?? 0), 0);
+  const activeCount =
+    FILTER_FIELDS.reduce((sum, f) => sum + (filters[f.key]?.length ?? 0), 0) +
+    BOOLEAN_FILTERS.reduce((sum, f) => sum + (filters[f.key] ? 1 : 0), 0);
 
   const inputClass =
     'h-[34px] px-[10px] border border-[#dde2ea] rounded-md text-[13px] bg-white text-[#1a2332] outline-none transition-colors focus:border-brand';

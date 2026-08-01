@@ -27,10 +27,7 @@ export function Tooltip({ label, note, children }) {
         >
           {label && <div className="text-[10px] font-semibold text-[#94a8c8] uppercase tracking-wide mb-1.5">{label}</div>}
           {note ? (
-            <>
-              <div>{children}</div>
-              <div className="mt-2 pt-2 border-t border-white/10 text-[10px] text-[#94a8c8]">{note}</div>
-            </>
+            <div>{note}</div>
           ) : (
             <div>Bugs with status: To Do, In Progress, Code Review, Blocked, or Failed.<div className="mt-2 pt-2 border-t border-white/10 text-[10px] text-[#94a8c8]">Excludes issues already fixed or awaiting deployment.</div></div>
           )}

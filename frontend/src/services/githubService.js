@@ -32,6 +32,16 @@ function withCache(key, fn) {
   return promise;
 }
 
+// Drops the cached summary/repos/open-prs promises so the next fetch call
+// re-hits the backend instead of returning the stale in-memory result — used
+// after a manual repo retry, since the backend cache was just patched but
+// this tab's own cache doesn't know that yet.
+export function invalidateGHCache() {
+  delete cache['gh-summary'];
+  delete cache['gh-repos'];
+  delete cache['gh-open-prs'];
+}
+
 export function fetchGHSummary() {
   return withCache('gh-summary', async () => {
     try {
@@ -69,5 +79,15 @@ export function fetchGHOpenPRs() {
 export async function fetchGHProgress() {
   const res = await api.get('/api/github/progress');
   return res.data;
+}
+
+// Force-refetches one repo, bypassing the backend cache. Never cached itself.
+export async function retryGHRepo(repo) {
+  try {
+    const res = await api.post(`/api/github/repos/${encodeURIComponent(repo)}/retry`);
+    return res.data;
+  } catch (err) {
+    throw new Error(extractError(err));
+  }
 }
 
