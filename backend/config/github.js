@@ -41,7 +41,6 @@ module.exports = {
   shardPattern: /Run tests on Ubuntu Shard-(\d+)/i,
   ciAppSlug: 'azure-pipelines',
   dataWindowDays: 30,
-  trendWeeks: 8,
   cacheTtl: {
     // Lazy/on-demand refresh — only refetches when someone visits AND the
     // cache is older than this. GraphQL fetches are cheap (~50-100 rate

@@ -37,6 +37,7 @@ function transformIssue(raw) {
     c: toDateStr(f.created),
     r: toDateStr(f.resolutiondate),
     d: toDateStr(f.customfield_10733),
+    l: f.labels || [],
     w: extractWorkspaceNames(f.customfield_10568),
     reg: normalizeValues(extractMultiSelect(f.customfield_10577), REGION_CANONICAL),
     os: normalizeValues(extractMultiSelect(f.customfield_10571), OS_CANONICAL),

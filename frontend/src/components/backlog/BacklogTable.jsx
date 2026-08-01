@@ -2,13 +2,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { StatusPill, PriorityPill } from '../common/Pill';
 import { DrillBadge } from './DrillBadge';
 import { FilterBar } from './FilterBar';
-import { isOpen, isDeploy, isResolved } from '../../utils/issueUtils';
+import { isOpen, isDeploy, isResolved, isDeployed, hasNoActionDoneLabel, needsDeployment } from '../../utils/issueUtils';
 import { ws } from '../../utils/dateUtils';
 import { PSORT } from '../../constants/jira';
 
 const JIRA_BASE = 'https://novade.atlassian.net/browse';
 
-const INITIAL_FILTERS = { search: '', priority: [], status: [], assignee: [], reg: [], os: [] };
+const INITIAL_FILTERS = { search: '', priority: [], status: [], assignee: [], reg: [], os: [], noActionDone: false, pendingDeployment: false };
 
 function drillToFilterField(drill) {
   if (!drill) return null;
@@ -29,16 +29,28 @@ function applyDrill(data, drill) {
       return data.filter(isResolved);
     case 'open':
       return data.filter(isOpen);
+    case 'open_excl_blocked':
+      return data.filter((b) => isOpen(b) && b.st !== 'Blocked');
     case 'blocked':
       return data.filter((b) => b.st === 'Blocked');
     case 'deploy':
       return data.filter(isDeploy);
+    case 'pending_deployment':
+      return data.filter(needsDeployment);
+    case 'deployed':
+      return data.filter(isDeployed);
+    case 'created_valid':
+      return data.filter((b) => !hasNoActionDoneLabel(b));
     case 'all':
       return data;
     case 'week_c':
       return data.filter((b) => ws(b.c) === drill.val);
+    case 'week_c_valid':
+      return data.filter((b) => ws(b.c) === drill.val && !hasNoActionDoneLabel(b));
     case 'week_r':
       return data.filter((b) => b.r && ws(b.r) === drill.val);
+    case 'week_d':
+      return data.filter((b) => b.d && ws(b.d) === drill.val);
     case 'cum_c':
       return data.filter((b) => ws(b.c) <= drill.val);
     case 'cum_r':
@@ -113,13 +125,15 @@ export function BacklogTable({ issues, drill, onClearDrill, showWorkspace = fals
       setFilters((prev) => ({ ...prev, assignee: [drill.val] }));
     } else if (drill.key === 'blocked') {
       setFilters((prev) => ({ ...prev, status: ['Blocked'] }));
+    } else if (drill.key === 'pending_deployment') {
+      setFilters((prev) => ({ ...prev, pendingDeployment: true }));
     }
   }, [drill?.key, drill?.val]);
 
   const displayed = useMemo(() => {
     let data = applyDrill([...issues], drill);
 
-    const { search, priority, status, assignee, reg, os } = filters;
+    const { search, priority, status, assignee, reg, os, noActionDone, pendingDeployment } = filters;
     if (search)
       data = data.filter(
         (b) =>
@@ -131,6 +145,8 @@ export function BacklogTable({ issues, drill, onClearDrill, showWorkspace = fals
     if (assignee.length) data = data.filter((b) => assignee.includes(b.a));
     if (reg.length) data = data.filter((b) => b.reg?.some((r) => reg.includes(r)));
     if (os.length) data = data.filter((b) => b.os?.some((o) => os.includes(o)));
+    if (noActionDone) data = data.filter(hasNoActionDoneLabel);
+    if (pendingDeployment) data = data.filter(needsDeployment);
 
     if (drill?.key === 'blocked' && !sortCol) {
       data = [...data].sort((a, b) => (PSORT[a.p] ?? 99) - (PSORT[b.p] ?? 99));
@@ -207,6 +223,9 @@ export function BacklogTable({ issues, drill, onClearDrill, showWorkspace = fals
                 </th>
                 <th className="text-left px-3.5 py-2.5 font-semibold text-[11px] text-[#8896b0] bg-[#f5f7fa] border-b border-[#dde2ea] uppercase tracking-[.5px] whitespace-nowrap">
                   Resolved
+                </th>
+                <th className="text-left px-3.5 py-2.5 font-semibold text-[11px] text-[#8896b0] bg-[#f5f7fa] border-b border-[#dde2ea] uppercase tracking-[.5px] whitespace-nowrap">
+                  Deployed
                 </th>
               </tr>
             </thead>
@@ -296,12 +315,21 @@ export function BacklogTable({ issues, drill, onClearDrill, showWorkspace = fals
                   >
                     {b.r || '-'}
                   </td>
+                  <td
+                    className={`px-3.5 py-[9px] whitespace-nowrap text-[12px] text-[#9aa0b4] ${
+                      idx < displayed.length - 1
+                        ? 'border-b border-[#eef0f4]'
+                        : ''
+                    }`}
+                  >
+                    {b.d || '-'}
+                  </td>
                 </tr>
               ))}
               {displayed.length === 0 && (
                 <tr>
                   <td
-                    colSpan={showWorkspace ? 8 : 7}
+                    colSpan={showWorkspace ? 9 : 8}
                     className="px-3.5 py-8 text-center text-[13px] text-[#8896b0]"
                   >
                     No issues match your filters.

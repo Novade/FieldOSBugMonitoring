@@ -39,6 +39,8 @@ export function AllBugsPage() {
   }, [fetchedAt, setSyncTime]);
 
   function handleTabChange(tabId) {
+    setBugDrill(null);
+    setRegDrill(null);
     navigate(TAB_TO_PATH[tabId]);
   }
 

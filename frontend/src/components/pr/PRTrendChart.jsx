@@ -13,42 +13,43 @@ import { TOOLTIP_DEFAULTS } from '../../constants/chartDefaults';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Filler);
 
-const TARGET_HOURS = 24;
-
-export function PRTrendChart({ weeklyTrend }) {
+// Generic weekly P75 trend line — used for Cycle Time, First Review, and PR
+// Size so all three share one implementation instead of near-duplicates.
+export function PRTrendChart({ weeklyTrend, metricKey, label, axisLabel, color, unit, decimals = 1, target, chartId }) {
   const { labels, datasets } = useMemo(() => {
     if (!weeklyTrend?.length) return { labels: [], datasets: [] };
 
-    const labs = weeklyTrend.map((w) => w.label);
-    const values = weeklyTrend.map((w) => w.cycletime_p75);
+    const values = weeklyTrend.map((w) => w[metricKey]);
 
-    return {
-      labels: labs,
-      datasets: [
-        {
-          label: 'P75 Cycle Time',
-          data: values,
-          borderColor: '#3b6cb7',
-          backgroundColor: 'rgba(59,108,183,0.08)',
-          borderWidth: 2,
-          pointRadius: 4,
-          pointBackgroundColor: '#3b6cb7',
-          tension: 0.3,
-          fill: true,
-          spanGaps: true,
-        },
-        {
-          label: '24h Target',
-          data: weeklyTrend.map(() => TARGET_HOURS),
-          borderColor: '#c0392b',
-          borderWidth: 1.5,
-          borderDash: [6, 4],
-          pointRadius: 0,
-          fill: false,
-        },
-      ],
-    };
-  }, [weeklyTrend]);
+    const datasets = [
+      {
+        label: `P75 ${label}`,
+        data: values,
+        borderColor: color,
+        backgroundColor: `${color}14`,
+        borderWidth: 2,
+        pointRadius: 4,
+        pointBackgroundColor: color,
+        tension: 0.3,
+        fill: true,
+        spanGaps: true,
+      },
+    ];
+
+    if (target != null) {
+      datasets.push({
+        label: `${target}${unit} Target`,
+        data: weeklyTrend.map(() => target),
+        borderColor: '#c0392b',
+        borderWidth: 1.5,
+        borderDash: [6, 4],
+        pointRadius: 0,
+        fill: false,
+      });
+    }
+
+    return { labels: weeklyTrend.map((w) => w.label), datasets };
+  }, [weeklyTrend, metricKey, label, color, unit, target]);
 
   const options = {
     responsive: true,
@@ -62,10 +63,10 @@ export function PRTrendChart({ weeklyTrend }) {
         callbacks: {
           label: (item) =>
             item.datasetIndex === 1
-              ? `  Target: ${TARGET_HOURS}h`
+              ? `  Target: ${target}${unit}`
               : item.parsed.y == null
               ? null
-              : `  P75: ${item.parsed.y.toFixed(1)}h`,
+              : `  P75: ${item.parsed.y.toFixed(decimals)}${unit}`,
         },
       },
     },
@@ -73,15 +74,15 @@ export function PRTrendChart({ weeklyTrend }) {
       x: { ticks: { font: { size: 11 } }, grid: { display: false } },
       y: {
         beginAtZero: true,
-        ticks: { font: { size: 10 }, callback: (v) => `${v}h` },
-        title: { display: true, text: 'Hours', font: { size: 11 }, color: '#8896b0' },
+        ticks: { font: { size: 10 }, callback: (v) => `${v}${unit}` },
+        title: { display: true, text: axisLabel, font: { size: 11 }, color: '#8896b0' },
       },
     },
   };
 
   return (
     <div style={{ position: 'relative', height: 220 }}>
-      <Line data={{ labels, datasets }} options={options} id="prTrend" />
+      <Line data={{ labels, datasets }} options={options} id={chartId} />
     </div>
   );
 }

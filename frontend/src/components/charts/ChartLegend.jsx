@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 
-export function ChartLegend({ datasets, chartRef }) {
+export function ChartLegend({ datasets, chartRef, showTotals = false }) {
   const [muted, setMuted] = useState({});
 
   function toggle(i) {
@@ -35,7 +35,7 @@ export function ChartLegend({ datasets, chartRef }) {
               className="w-2.5 h-2.5 rounded-sm shrink-0"
               style={{ background: color }}
             />
-            {ds.label}
+            {showTotals ? `${ds.label} (${ds.data.reduce((sum, v) => sum + v, 0)})` : ds.label}
           </span>
         );
       })}
