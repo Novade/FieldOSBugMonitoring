@@ -1,0 +1,57 @@
+trigger:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  resourceGroup: rg-fieldos-bug-dashboard
+  acrName: novadecontainerregistry
+  acrResourceGroup: rg-frc-prod-container-registry
+  appName: ca-fieldos-bug-dashboard
+  imageRepository: fieldos-bug-dashboard
+
+steps:
+  - task: AzureCLI@2
+    displayName: Set image name
+    inputs:
+      azureSubscription: '$(azureServiceConnection)'
+      scriptType: bash
+      scriptLocation: inlineScript
+      inlineScript: |
+        set -euo pipefail
+        IMAGE_NAME="$(imageRepository):$(Build.SourceVersion)"
+        echo "##vso[task.setvariable variable=imageName]$IMAGE_NAME"
+        echo "Image: $IMAGE_NAME"
+
+  - task: AzureCLI@2
+    displayName: Build image in ACR
+    inputs:
+      azureSubscription: '$(azureServiceConnection)'
+      scriptType: bash
+      scriptLocation: inlineScript
+      inlineScript: |
+        set -euo pipefail
+        az acr build \
+          --registry "$(acrName)" \
+          --image "$(imageName)" \
+          .
+
+  - task: AzureCLI@2
+    displayName: Update Container App image
+    inputs:
+      azureSubscription: '$(azureServiceConnection)'
+      scriptType: bash
+      scriptLocation: inlineScript
+      inlineScript: |
+        set -euo pipefail
+        az containerapp update \
+          --name "$(appName)" \
+          --resource-group "$(resourceGroup)" \
+          --image "$(acrName).azurecr.io/$(imageName)" \
+          --output none
+
+  - script: echo "Deployed $(imageName)"
+    displayName: Report deployment
