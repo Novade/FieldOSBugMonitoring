@@ -17,7 +17,7 @@ steps:
   - task: AzureCLI@2
     displayName: Set image name
     inputs:
-      azureSubscription: '$(azureServiceConnection)'
+      azureSubscription: 'azureServiceConnection'
       scriptType: bash
       scriptLocation: inlineScript
       inlineScript: |
@@ -29,7 +29,7 @@ steps:
   - task: AzureCLI@2
     displayName: Build image in ACR
     inputs:
-      azureSubscription: '$(azureServiceConnection)'
+      azureSubscription: 'azureServiceConnection'
       scriptType: bash
       scriptLocation: inlineScript
       inlineScript: |
@@ -42,7 +42,7 @@ steps:
   - task: AzureCLI@2
     displayName: Update Container App image
     inputs:
-      azureSubscription: '$(azureServiceConnection)'
+      azureSubscription: 'azureServiceConnection'
       scriptType: bash
       scriptLocation: inlineScript
       inlineScript: |
