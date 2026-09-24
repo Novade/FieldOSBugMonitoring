@@ -45,17 +45,24 @@ export function BranchPicker({ branches, selected, onSelect, disabled = false })
       }
     }
     // Closing on scroll/resize is simpler and more robust than tracking the
-    // button's position live while a fixed-position popover is open.
-    function handleClose() {
+    // button's position live while a fixed-position popover is open. Scroll
+    // uses the capture phase so it catches scrolling anywhere on the page
+    // (scroll events don't bubble) — but that also means it sees scrolling
+    // inside the popover's own branch list, which must NOT close it.
+    function handleScroll(e) {
+      if (popoverRef.current && popoverRef.current.contains(e.target)) return;
+      setOpen(false);
+    }
+    function handleResize() {
       setOpen(false);
     }
     document.addEventListener('mousedown', handleClickOutside);
-    window.addEventListener('scroll', handleClose, true);
-    window.addEventListener('resize', handleClose);
+    window.addEventListener('scroll', handleScroll, true);
+    window.addEventListener('resize', handleResize);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
-      window.removeEventListener('scroll', handleClose, true);
-      window.removeEventListener('resize', handleClose);
+      window.removeEventListener('scroll', handleScroll, true);
+      window.removeEventListener('resize', handleResize);
     };
   }, [open]);
 
