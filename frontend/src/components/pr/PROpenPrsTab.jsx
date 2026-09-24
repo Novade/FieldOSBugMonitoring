@@ -9,30 +9,31 @@ const LEGEND_ITEMS = [
   { color: '#2e7d5e', label: 'Compliant' },
 ];
 
-// Each column's width is a clamp(min, preferred%, max) — it scales with the
-// window/container width like a percentage would (filling extra room on a
-// wide monitor), but never shrinks below the min it actually needs or grows
-// past a sensible max. Pure CSS, no resize listeners needed.
+// Plain percentages (always sum to 100%) — table-fixed treats these as a
+// reliable, well-supported contract: every browser resolves a % <col> width
+// against the table's own width the same way, unlike clamp()/calc() on
+// <col>, which several engines silently ignore inside a fixed table layout
+// (falling back to sizing that column off its first-row content instead —
+// which is what was actually happening the last two rounds of tuning here,
+// despite the numbers changing in the source).
 //
-// PR title is the actual point of this table, so it needs real room rather
-// than splitting it many ways — Repo+Branch and Phase+Status are stacked
-// into single columns (still fully visible, just two lines instead of two),
-// and Created/Resolved dates are dropped entirely since Open For is what
-// actually matters here. PR itself has no fixed width: table-fixed hands it
-// whatever's left over, and its content still truncates with a tooltip if a
-// title is genuinely long.
+// PR title is the actual point of this table, so it gets the largest single
+// share (45%, well over 2x any other column) rather than splitting evenly —
+// Repo+Branch and Phase+Status are stacked into single columns (still fully
+// visible, just two lines instead of two), and Created/Resolved dates are
+// dropped entirely since Open For is what actually matters here.
 const BASE_COLUMNS = [
-  { key: 'number', label: 'PR #', get: (p) => p.number },
-  { key: 'author', label: 'Author', get: (p) => p.author, width: 'clamp(90px, 6%, 130px)' },
+  { key: 'number', label: 'PR #', get: (p) => p.number, width: '45%' },
+  { key: 'author', label: 'Author', get: (p) => p.author, width: '11%' },
   {
     key: 'repo',
     label: 'Repo / Branch',
     get: (p) => `${p.repo} ${p.branch || ''}`,
-    width: 'clamp(130px, 9%, 180px)',
+    width: '15%',
   },
-  { key: 'elapsedHours', label: 'Open For', get: (p) => p.elapsedHours ?? -1, width: 'clamp(65px, 4%, 80px)' },
-  { key: 'sizeLines', label: 'Lines', get: (p) => p.sizeLines, width: 'clamp(70px, 4%, 90px)' },
-  { key: 'status', label: 'Status / Phase', get: (p) => p.status, width: 'clamp(100px, 7%, 140px)' },
+  { key: 'elapsedHours', label: 'Open For', get: (p) => p.elapsedHours ?? -1, width: '8%' },
+  { key: 'sizeLines', label: 'Lines', get: (p) => p.sizeLines, width: '8%' },
+  { key: 'status', label: 'Status / Phase', get: (p) => p.status, width: '13%' },
 ];
 
 function StatusPill({ status }) {
