@@ -15,11 +15,12 @@ const LEGEND_ITEMS = [
 // past a sensible max. Pure CSS, no resize listeners needed.
 //
 // PR title is the actual point of this table, so it needs real room rather
-// than splitting it 10 ways — Repo+Branch and Phase+Status are stacked into
-// single columns (still fully visible, just two lines instead of two
-// columns), and Resolved only shows up once there's something to show. PR
-// itself has no fixed width: table-fixed hands it whatever's left over, and
-// its content still truncates with a tooltip if a title is genuinely long.
+// than splitting it many ways — Repo+Branch and Phase+Status are stacked
+// into single columns (still fully visible, just two lines instead of two),
+// and Created/Resolved dates are dropped entirely since Open For is what
+// actually matters here. PR itself has no fixed width: table-fixed hands it
+// whatever's left over, and its content still truncates with a tooltip if a
+// title is genuinely long.
 const BASE_COLUMNS = [
   { key: 'number', label: 'PR #', get: (p) => p.number },
   { key: 'author', label: 'Author', get: (p) => p.author, width: 'clamp(100px, 8%, 160px)' },
@@ -29,32 +30,10 @@ const BASE_COLUMNS = [
     get: (p) => `${p.repo} ${p.branch || ''}`,
     width: 'clamp(150px, 12%, 230px)',
   },
-  {
-    key: 'createdAt',
-    label: 'Created Date',
-    get: (p) => new Date(p.createdAt).getTime(),
-    width: 'clamp(85px, 7%, 115px)',
-  },
-  { key: 'elapsedHours', label: 'Open For', get: (p) => p.elapsedHours ?? -1, width: 'clamp(60px, 5%, 85px)' },
-  {
-    key: 'resolvedAt',
-    label: 'Resolved',
-    get: (p) => (p.resolvedAt ? new Date(p.resolvedAt).getTime() : 0),
-    width: 'clamp(80px, 6%, 110px)',
-    onlyWhenResolvedShown: true,
-  },
+  { key: 'elapsedHours', label: 'Open For', get: (p) => p.elapsedHours ?? -1, width: 'clamp(70px, 6%, 100px)' },
   { key: 'sizeLines', label: 'Lines', get: (p) => p.sizeLines, width: 'clamp(75px, 6%, 110px)' },
   { key: 'status', label: 'Status / Phase', get: (p) => p.status, width: 'clamp(120px, 9%, 170px)' },
 ];
-
-function formatDate(iso) {
-  if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
-}
 
 function StatusPill({ status }) {
   const styles = {
@@ -101,8 +80,8 @@ export function PROpenPrsTab({ openPrs }) {
   const [resolvedLoading, setResolvedLoading] = useState(false);
   const [resolvedError, setResolvedError] = useState(null);
 
-  // Default: newest PR first (latest created date at top), oldest at the bottom
-  const [sortKey, setSortKey] = useState('createdAt');
+  // Default: longest-open PR first, matching the backend's own default order
+  const [sortKey, setSortKey] = useState('elapsedHours');
   const [sortDir, setSortDir] = useState('desc');
 
   function handleToggleResolved(e) {
@@ -159,13 +138,8 @@ export function PROpenPrsTab({ openPrs }) {
     };
   }, [filteredPrs]);
 
-  const columns = useMemo(
-    () => BASE_COLUMNS.filter((c) => showResolved || !c.onlyWhenResolvedShown),
-    [showResolved]
-  );
-
   const sortedPrs = useMemo(() => {
-    const col = columns.find((c) => c.key === sortKey);
+    const col = BASE_COLUMNS.find((c) => c.key === sortKey);
     if (!col) return filteredPrs;
     const dir = sortDir === 'asc' ? 1 : -1;
     return [...filteredPrs].sort((a, b) => {
@@ -176,7 +150,7 @@ export function PROpenPrsTab({ openPrs }) {
       }
       return (av - bv) * dir;
     });
-  }, [filteredPrs, columns, sortKey, sortDir]);
+  }, [filteredPrs, sortKey, sortDir]);
 
   const filtersActive = selectedRepo !== 'all' || selectedBranch !== 'all';
 
@@ -269,13 +243,13 @@ export function PROpenPrsTab({ openPrs }) {
           <div className="max-h-[520px] overflow-y-auto overflow-x-hidden" style={{ scrollbarGutter: 'stable' }}>
           <table className="w-full table-fixed text-[12px]">
             <colgroup>
-              {columns.map((col) => (
+              {BASE_COLUMNS.map((col) => (
                 <col key={col.key} style={{ width: col.width }} />
               ))}
             </colgroup>
             <thead className="sticky top-0 z-10 bg-[#f5f7fa]">
               <tr className="bg-[#f5f7fa] border-b border-[#dde2ea]">
-                {columns.map((col) => {
+                {BASE_COLUMNS.map((col) => {
                   const active = sortKey === col.key;
                   return (
                     <th
@@ -323,13 +297,9 @@ export function PROpenPrsTab({ openPrs }) {
                     <div className="text-[#6b7a99] truncate">{pr.repo}</div>
                     {pr.branch && <div className="text-[10px] text-[#8896b0] truncate">{pr.branch}</div>}
                   </td>
-                  <td className="px-3 py-2 text-[#6b7a99] truncate">{formatDate(pr.createdAt)}</td>
                   <td className="px-3 py-2 text-[#1a2332] truncate font-medium">
                     {pr.elapsedHours != null ? formatHoursShort(pr.elapsedHours) : '—'}
                   </td>
-                  {showResolved && (
-                    <td className="px-3 py-2 text-[#6b7a99] truncate">{formatDate(pr.resolvedAt)}</td>
-                  )}
                   <td className="px-3 py-2 text-[#6b7a99] truncate">
                     <span className="text-[#2e7d5e]">+{pr.additions}</span>
                     {' '}
