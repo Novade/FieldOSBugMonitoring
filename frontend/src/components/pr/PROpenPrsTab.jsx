@@ -79,6 +79,7 @@ const SELECT_CLASS =
 export function PROpenPrsTab({ openPrs }) {
   const [selectedRepo, setSelectedRepo] = useState('all');
   const [selectedBranch, setSelectedBranch] = useState('all');
+  const [selectedAuthor, setSelectedAuthor] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedPhase, setSelectedPhase] = useState('all');
   const [showResolved, setShowResolved] = useState(false);
@@ -124,6 +125,11 @@ export function PROpenPrsTab({ openPrs }) {
     }
   }, [branchOptions, selectedBranch]);
 
+  const authorOptions = useMemo(
+    () => [...new Set(allPrs.map((p) => p.author))].sort(),
+    [allPrs]
+  );
+
   const statusOptions = useMemo(
     () => [...new Set(allPrs.map((p) => p.status))].sort(),
     [allPrs]
@@ -133,6 +139,12 @@ export function PROpenPrsTab({ openPrs }) {
     () => [...new Set(allPrs.map((p) => p.phase).filter(Boolean))].sort(),
     [allPrs]
   );
+
+  useEffect(() => {
+    if (selectedAuthor !== 'all' && !authorOptions.includes(selectedAuthor)) {
+      setSelectedAuthor('all');
+    }
+  }, [authorOptions, selectedAuthor]);
 
   useEffect(() => {
     if (selectedStatus !== 'all' && !statusOptions.includes(selectedStatus)) {
@@ -152,10 +164,11 @@ export function PROpenPrsTab({ openPrs }) {
         (p) =>
           (selectedRepo === 'all' || p.repo === selectedRepo) &&
           (selectedBranch === 'all' || p.branch === selectedBranch) &&
+          (selectedAuthor === 'all' || p.author === selectedAuthor) &&
           (selectedStatus === 'all' || p.status === selectedStatus) &&
           (selectedPhase === 'all' || p.phase === selectedPhase)
       ),
-    [allPrs, selectedRepo, selectedBranch, selectedStatus, selectedPhase]
+    [allPrs, selectedRepo, selectedBranch, selectedAuthor, selectedStatus, selectedPhase]
   );
 
   const stats = useMemo(() => {
@@ -183,11 +196,16 @@ export function PROpenPrsTab({ openPrs }) {
   }, [filteredPrs, sortKey, sortDir]);
 
   const filtersActive =
-    selectedRepo !== 'all' || selectedBranch !== 'all' || selectedStatus !== 'all' || selectedPhase !== 'all';
+    selectedRepo !== 'all' ||
+    selectedBranch !== 'all' ||
+    selectedAuthor !== 'all' ||
+    selectedStatus !== 'all' ||
+    selectedPhase !== 'all';
 
   function clearFilters() {
     setSelectedRepo('all');
     setSelectedBranch('all');
+    setSelectedAuthor('all');
     setSelectedStatus('all');
     setSelectedPhase('all');
   }
@@ -230,6 +248,18 @@ export function PROpenPrsTab({ openPrs }) {
             {branchOptions.map((b) => (
               <option key={b} value={b}>
                 {b}
+              </option>
+            ))}
+          </select>
+          <select
+            value={selectedAuthor}
+            onChange={(e) => setSelectedAuthor(e.target.value)}
+            className={SELECT_CLASS}
+          >
+            <option value="all">All Authors</option>
+            {authorOptions.map((a) => (
+              <option key={a} value={a}>
+                {a}
               </option>
             ))}
           </select>
