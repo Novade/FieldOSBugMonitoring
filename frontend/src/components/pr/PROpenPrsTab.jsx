@@ -9,25 +9,28 @@ const LEGEND_ITEMS = [
   { color: '#2e7d5e', label: 'Compliant' },
 ];
 
-// Each column declares how to extract its sortable value, plus a fixed
-// width (columns sum to 100%) so the table never needs horizontal scroll —
-// long content (e.g. a branch name) truncates with an ellipsis instead.
+// Each column declares how to extract its sortable value, plus a width sized
+// to what it actually holds (usernames, repo names, "Changes requested"…) so
+// the table never needs horizontal scroll without every column truncating.
+// PR is the only column with no fixed width — table-fixed hands it whatever
+// space is left over, and its content is expected to truncate (it always
+// has, long before this table grew more columns) since it has a tooltip.
 const COLUMNS = [
-  { key: 'number', label: 'PR #', get: (p) => p.number, width: '20%' },
-  { key: 'author', label: 'Author', get: (p) => p.author, width: '9%' },
-  { key: 'repo', label: 'Repo', get: (p) => p.repo, width: '10%' },
-  { key: 'branch', label: 'Branch', get: (p) => p.branch || '', width: '9%' },
-  { key: 'createdAt', label: 'Created Date', get: (p) => new Date(p.createdAt).getTime(), width: '9%' },
-  { key: 'elapsedHours', label: 'Open For', get: (p) => p.elapsedHours ?? -1, width: '7%' },
+  { key: 'number', label: 'PR #', get: (p) => p.number },
+  { key: 'author', label: 'Author', get: (p) => p.author, width: '120px' },
+  { key: 'repo', label: 'Repo', get: (p) => p.repo, width: '150px' },
+  { key: 'branch', label: 'Branch', get: (p) => p.branch || '', width: '100px' },
+  { key: 'createdAt', label: 'Created Date', get: (p) => new Date(p.createdAt).getTime(), width: '95px' },
+  { key: 'elapsedHours', label: 'Open For', get: (p) => p.elapsedHours ?? -1, width: '70px' },
   {
     key: 'resolvedAt',
     label: 'Resolved',
     get: (p) => (p.resolvedAt ? new Date(p.resolvedAt).getTime() : 0),
-    width: '8%',
+    width: '90px',
   },
-  { key: 'sizeLines', label: 'Lines', get: (p) => p.sizeLines, width: '8%' },
-  { key: 'phase', label: 'Phase', get: (p) => p.phase, width: '11%' },
-  { key: 'status', label: 'Status', get: (p) => p.status, width: '9%' },
+  { key: 'sizeLines', label: 'Lines', get: (p) => p.sizeLines, width: '90px' },
+  { key: 'phase', label: 'Phase', get: (p) => p.phase, width: '140px' },
+  { key: 'status', label: 'Status', get: (p) => p.status, width: '85px' },
 ];
 
 function formatDate(iso) {
@@ -261,7 +264,7 @@ export function PROpenPrsTab({ openPrs }) {
       ) : (
         <div className="border border-[#dde2ea] rounded-lg overflow-hidden">
           <div className="max-h-[520px] overflow-y-auto overflow-x-hidden">
-          <table className="w-full table-fixed text-[13px]">
+          <table className="w-full table-fixed text-[12px]">
             <colgroup>
               {COLUMNS.map((col) => (
                 <col key={col.key} style={{ width: col.width }} />
@@ -275,7 +278,7 @@ export function PROpenPrsTab({ openPrs }) {
                     <th
                       key={col.key}
                       onClick={() => handleSort(col.key)}
-                      className="text-left px-4 py-2.5 font-semibold text-[#6b7a99] text-[11px] uppercase tracking-[.4px] cursor-pointer select-none hover:text-[#3b6cb7] truncate"
+                      className="text-left px-3 py-2 font-semibold text-[#6b7a99] text-[11px] uppercase tracking-[.4px] cursor-pointer select-none hover:text-[#3b6cb7] truncate"
                     >
                       <span className="inline-flex items-center gap-1">
                         {col.label}
@@ -302,7 +305,7 @@ export function PROpenPrsTab({ openPrs }) {
                     i % 2 === 0 ? '' : 'bg-[#fafbfc]'
                   }`}
                 >
-                  <td className="px-4 py-2.5 text-[#1a2332] truncate" title={`#${pr.number} - ${pr.title}`}>
+                  <td className="px-3 py-2 text-[#1a2332] truncate" title={`#${pr.number} - ${pr.title}`}>
                     <a
                       href={pr.url}
                       target="_blank"
@@ -312,23 +315,23 @@ export function PROpenPrsTab({ openPrs }) {
                       #{pr.number} - {pr.title}
                     </a>
                   </td>
-                  <td className="px-4 py-2.5 text-[#6b7a99] truncate" title={pr.author}>{pr.author}</td>
-                  <td className="px-4 py-2.5 text-[#6b7a99] truncate" title={pr.repo}>{pr.repo}</td>
-                  <td className="px-4 py-2.5 text-[#6b7a99] truncate" title={pr.branch || ''}>{pr.branch || '—'}</td>
-                  <td className="px-4 py-2.5 text-[#6b7a99] truncate">{formatDate(pr.createdAt)}</td>
-                  <td className="px-4 py-2.5 text-[#1a2332] truncate font-medium">
+                  <td className="px-3 py-2 text-[#6b7a99] truncate" title={pr.author}>{pr.author}</td>
+                  <td className="px-3 py-2 text-[#6b7a99] truncate" title={pr.repo}>{pr.repo}</td>
+                  <td className="px-3 py-2 text-[#6b7a99] truncate" title={pr.branch || ''}>{pr.branch || '—'}</td>
+                  <td className="px-3 py-2 text-[#6b7a99] truncate">{formatDate(pr.createdAt)}</td>
+                  <td className="px-3 py-2 text-[#1a2332] truncate font-medium">
                     {pr.elapsedHours != null ? formatHoursShort(pr.elapsedHours) : '—'}
                   </td>
-                  <td className="px-4 py-2.5 text-[#6b7a99] truncate">{formatDate(pr.resolvedAt)}</td>
-                  <td className="px-4 py-2.5 text-[#6b7a99] truncate">
+                  <td className="px-3 py-2 text-[#6b7a99] truncate">{formatDate(pr.resolvedAt)}</td>
+                  <td className="px-3 py-2 text-[#6b7a99] truncate">
                     <span className="text-[#2e7d5e]">+{pr.additions}</span>
                     {' '}
                     <span className="text-[#c0392b]">-{pr.deletions}</span>
                   </td>
-                  <td className="px-4 py-2.5 overflow-hidden">
+                  <td className="px-3 py-2 overflow-hidden">
                     <PhasePill phase={pr.phase} />
                   </td>
-                  <td className="px-4 py-2.5 overflow-hidden">
+                  <td className="px-3 py-2 overflow-hidden">
                     <StatusPill status={pr.status} />
                   </td>
                 </tr>
