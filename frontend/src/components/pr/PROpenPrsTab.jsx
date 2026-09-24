@@ -23,16 +23,16 @@ const LEGEND_ITEMS = [
 // title is genuinely long.
 const BASE_COLUMNS = [
   { key: 'number', label: 'PR #', get: (p) => p.number },
-  { key: 'author', label: 'Author', get: (p) => p.author, width: 'clamp(100px, 8%, 160px)' },
+  { key: 'author', label: 'Author', get: (p) => p.author, width: 'clamp(90px, 6%, 130px)' },
   {
     key: 'repo',
     label: 'Repo / Branch',
     get: (p) => `${p.repo} ${p.branch || ''}`,
-    width: 'clamp(150px, 12%, 230px)',
+    width: 'clamp(130px, 9%, 180px)',
   },
-  { key: 'elapsedHours', label: 'Open For', get: (p) => p.elapsedHours ?? -1, width: 'clamp(70px, 6%, 100px)' },
-  { key: 'sizeLines', label: 'Lines', get: (p) => p.sizeLines, width: 'clamp(75px, 6%, 110px)' },
-  { key: 'status', label: 'Status / Phase', get: (p) => p.status, width: 'clamp(120px, 9%, 170px)' },
+  { key: 'elapsedHours', label: 'Open For', get: (p) => p.elapsedHours ?? -1, width: 'clamp(65px, 4%, 80px)' },
+  { key: 'sizeLines', label: 'Lines', get: (p) => p.sizeLines, width: 'clamp(70px, 4%, 90px)' },
+  { key: 'status', label: 'Status / Phase', get: (p) => p.status, width: 'clamp(100px, 7%, 140px)' },
 ];
 
 function StatusPill({ status }) {
@@ -69,8 +69,11 @@ function StatCard({ label, value, accent }) {
   );
 }
 
+// Fixed width (not just a shared class) — native <select> otherwise sizes
+// itself to its selected option's text, so "release/2.77.x" made the branch
+// dropdown wider than the repo one even though both use this same class.
 const SELECT_CLASS =
-  'text-[13px] border border-[#dde2ea] rounded-lg px-3 py-2 bg-white text-[#1a2332] cursor-pointer';
+  'w-44 truncate text-[13px] border border-[#dde2ea] rounded-lg px-3 py-2 bg-white text-[#1a2332] cursor-pointer';
 
 export function PROpenPrsTab({ openPrs }) {
   const [selectedRepo, setSelectedRepo] = useState('all');
