@@ -21,7 +21,7 @@ export function MainLayout({ children }) {
         <TopBar fetchedAt={fetchedAt} />
         <div className="flex flex-1 overflow-hidden">
           <LeftPane />
-          <div className="flex-1 overflow-y-auto bg-[#f0f2f5]">
+          <div className="flex-1 overflow-y-auto bg-[#f0f2f5]" style={{ scrollbarGutter: 'stable' }}>
             {children}
           </div>
         </div>
