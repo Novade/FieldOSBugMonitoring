@@ -1,13 +1,24 @@
-import { useEffect, useMemo, useState } from 'react';
-import { ChevronUp, ChevronDown, ChevronsUpDown, X } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import { formatHoursShort } from '../../utils/dateUtils';
 import { fetchGHResolvedPRs } from '../../services/githubService';
+import { FilterBar } from '../common/FilterBar';
 
 const LEGEND_ITEMS = [
   { color: '#c0392b', label: 'Breaching' },
   { color: '#d97706', label: 'Close' },
   { color: '#2e7d5e', label: 'Compliant' },
 ];
+
+const FILTER_FIELDS = [
+  { key: 'repo', label: 'Repo' },
+  { key: 'branch', label: 'Branch' },
+  { key: 'author', label: 'Author' },
+  { key: 'status', label: 'Status' },
+  { key: 'phase', label: 'Phase' },
+];
+
+const INITIAL_FILTERS = { search: '', repo: [], branch: [], author: [], status: [], phase: [] };
 
 // Plain percentages (always sum to 100%) — table-fixed treats these as a
 // reliable, well-supported contract: every browser resolves a % <col> width
@@ -70,18 +81,8 @@ function StatCard({ label, value, accent }) {
   );
 }
 
-// Fixed width (not just a shared class) — native <select> otherwise sizes
-// itself to its selected option's text, so "release/2.77.x" made the branch
-// dropdown wider than the repo one even though both use this same class.
-const SELECT_CLASS =
-  'w-44 truncate text-[13px] border border-[#dde2ea] rounded-lg px-3 py-2 bg-white text-[#1a2332] cursor-pointer';
-
 export function PROpenPrsTab({ openPrs }) {
-  const [selectedRepo, setSelectedRepo] = useState('all');
-  const [selectedBranch, setSelectedBranch] = useState('all');
-  const [selectedAuthor, setSelectedAuthor] = useState('all');
-  const [selectedStatus, setSelectedStatus] = useState('all');
-  const [selectedPhase, setSelectedPhase] = useState('all');
+  const [filters, setFilters] = useState(INITIAL_FILTERS);
   const [showResolved, setShowResolved] = useState(false);
   const [resolvedPrs, setResolvedPrs] = useState(null);
   const [resolvedLoading, setResolvedLoading] = useState(false);
@@ -109,67 +110,40 @@ export function PROpenPrsTab({ openPrs }) {
     return showResolved && resolvedPrs ? [...base, ...resolvedPrs] : base;
   }, [openPrs, showResolved, resolvedPrs]);
 
-  const repoOptions = useMemo(
-    () => [...new Set(allPrs.map((p) => p.repo))].sort(),
+  const fieldOptions = useMemo(
+    () => ({
+      repo: [...new Set(allPrs.map((p) => p.repo))].sort(),
+      branch: [...new Set(allPrs.map((p) => p.branch).filter(Boolean))].sort(),
+      author: [...new Set(allPrs.map((p) => p.author))].sort(),
+      status: [...new Set(allPrs.map((p) => p.status))].sort(),
+      phase: [...new Set(allPrs.map((p) => p.phase).filter(Boolean))].sort(),
+    }),
     [allPrs]
   );
 
-  const branchOptions = useMemo(() => {
-    const pool = selectedRepo === 'all' ? allPrs : allPrs.filter((p) => p.repo === selectedRepo);
-    return [...new Set(pool.map((p) => p.branch).filter(Boolean))].sort();
-  }, [allPrs, selectedRepo]);
+  function handleFilterChange(key, value) {
+    setFilters((prev) => ({ ...prev, [key]: value }));
+  }
 
-  useEffect(() => {
-    if (selectedBranch !== 'all' && !branchOptions.includes(selectedBranch)) {
-      setSelectedBranch('all');
-    }
-  }, [branchOptions, selectedBranch]);
+  function clearFilters() {
+    setFilters(INITIAL_FILTERS);
+  }
 
-  const authorOptions = useMemo(
-    () => [...new Set(allPrs.map((p) => p.author))].sort(),
-    [allPrs]
-  );
-
-  const statusOptions = useMemo(
-    () => [...new Set(allPrs.map((p) => p.status))].sort(),
-    [allPrs]
-  );
-
-  const phaseOptions = useMemo(
-    () => [...new Set(allPrs.map((p) => p.phase).filter(Boolean))].sort(),
-    [allPrs]
-  );
-
-  useEffect(() => {
-    if (selectedAuthor !== 'all' && !authorOptions.includes(selectedAuthor)) {
-      setSelectedAuthor('all');
-    }
-  }, [authorOptions, selectedAuthor]);
-
-  useEffect(() => {
-    if (selectedStatus !== 'all' && !statusOptions.includes(selectedStatus)) {
-      setSelectedStatus('all');
-    }
-  }, [statusOptions, selectedStatus]);
-
-  useEffect(() => {
-    if (selectedPhase !== 'all' && !phaseOptions.includes(selectedPhase)) {
-      setSelectedPhase('all');
-    }
-  }, [phaseOptions, selectedPhase]);
-
-  const filteredPrs = useMemo(
-    () =>
-      allPrs.filter(
-        (p) =>
-          (selectedRepo === 'all' || p.repo === selectedRepo) &&
-          (selectedBranch === 'all' || p.branch === selectedBranch) &&
-          (selectedAuthor === 'all' || p.author === selectedAuthor) &&
-          (selectedStatus === 'all' || p.status === selectedStatus) &&
-          (selectedPhase === 'all' || p.phase === selectedPhase)
-      ),
-    [allPrs, selectedRepo, selectedBranch, selectedAuthor, selectedStatus, selectedPhase]
-  );
+  const filteredPrs = useMemo(() => {
+    const { search, repo, branch, author, status, phase } = filters;
+    return allPrs.filter((p) => {
+      if (search) {
+        const q = search.toLowerCase();
+        if (!`${p.number}`.includes(q) && !p.title.toLowerCase().includes(q)) return false;
+      }
+      if (repo.length && !repo.includes(p.repo)) return false;
+      if (branch.length && !branch.includes(p.branch)) return false;
+      if (author.length && !author.includes(p.author)) return false;
+      if (status.length && !status.includes(p.status)) return false;
+      if (phase.length && !phase.includes(p.phase)) return false;
+      return true;
+    });
+  }, [allPrs, filters]);
 
   const stats = useMemo(() => {
     const openOnly = filteredPrs.filter((p) => p.state === 'OPEN');
@@ -195,21 +169,6 @@ export function PROpenPrsTab({ openPrs }) {
     });
   }, [filteredPrs, sortKey, sortDir]);
 
-  const filtersActive =
-    selectedRepo !== 'all' ||
-    selectedBranch !== 'all' ||
-    selectedAuthor !== 'all' ||
-    selectedStatus !== 'all' ||
-    selectedPhase !== 'all';
-
-  function clearFilters() {
-    setSelectedRepo('all');
-    setSelectedBranch('all');
-    setSelectedAuthor('all');
-    setSelectedStatus('all');
-    setSelectedPhase('all');
-  }
-
   function handleSort(key) {
     if (key === sortKey) {
       setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
@@ -226,79 +185,15 @@ export function PROpenPrsTab({ openPrs }) {
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-3">
-          <select
-            value={selectedRepo}
-            onChange={(e) => setSelectedRepo(e.target.value)}
-            className={SELECT_CLASS}
-          >
-            <option value="all">All Repos</option>
-            {repoOptions.map((r) => (
-              <option key={r} value={r}>
-                {r}
-              </option>
-            ))}
-          </select>
-          <select
-            value={selectedBranch}
-            onChange={(e) => setSelectedBranch(e.target.value)}
-            className={SELECT_CLASS}
-          >
-            <option value="all">All Branches</option>
-            {branchOptions.map((b) => (
-              <option key={b} value={b}>
-                {b}
-              </option>
-            ))}
-          </select>
-          <select
-            value={selectedAuthor}
-            onChange={(e) => setSelectedAuthor(e.target.value)}
-            className={SELECT_CLASS}
-          >
-            <option value="all">All Authors</option>
-            {authorOptions.map((a) => (
-              <option key={a} value={a}>
-                {a}
-              </option>
-            ))}
-          </select>
-          <select
-            value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value)}
-            className={SELECT_CLASS}
-          >
-            <option value="all">All Statuses</option>
-            {statusOptions.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-          <select
-            value={selectedPhase}
-            onChange={(e) => setSelectedPhase(e.target.value)}
-            className={SELECT_CLASS}
-          >
-            <option value="all">All Phases</option>
-            {phaseOptions.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
-          </select>
-          <button
-            type="button"
-            onClick={clearFilters}
-            disabled={!filtersActive}
-            className={`flex items-center gap-1 text-[13px] px-2 py-1 rounded-md ${
-              filtersActive ? 'text-[#3b6cb7] hover:bg-[#eef3fc] cursor-pointer' : 'text-[#c2cbda] cursor-not-allowed'
-            }`}
-          >
-            <X size={13} />
-            Clear filters
-          </button>
-        </div>
+        <FilterBar
+          fields={FILTER_FIELDS}
+          fieldOptions={fieldOptions}
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          onClear={clearFilters}
+          searchable
+          searchPlaceholder="Search PR # or title..."
+        />
 
         <div className="flex gap-4">
           {LEGEND_ITEMS.map((item) => (
