@@ -47,5 +47,7 @@ module.exports = {
     // limit points out of 5,000/hour), so a short TTL is safe.
     historical: 15 * 60 * 1000,
     openPrs: 15 * 60 * 1000,
+    branches: 15 * 60 * 1000,   // branch list changes rarely
+    branchPrs: 10 * 60 * 1000,  // shorter — this is the "follow up now" view
   },
 };

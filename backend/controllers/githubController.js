@@ -164,6 +164,13 @@ let reposCache = null,
 let openPrsCache = null,
   openPrsCacheTs = 0;
 
+// Per-repo branch lists and per-repo-per-branch PR lists — both scoped to a
+// single repo (chosen by the user before either is fetched), so a flat
+// Map keyed by repo (or `repo:branch`) is simpler than the array+timestamp
+// pairs above, which only ever hold one all-repos snapshot at a time.
+const branchesCache = new Map(); // repo -> { data, ts }
+const branchPrsCache = new Map(); // `${repo}:${branch}` -> { data, ts }
+
 // In-memory fetch-progress tracker — lets the frontend show real per-repo
 // status ("fetching NovadeLite…") during a cold-cache load instead of a
 // generic spinner. Pure bookkeeping: no GitHub calls, no added latency.
@@ -196,6 +203,24 @@ function markRepoStatus(repo, kind, ok) {
 
 const HIST_TTL = githubConfig.cacheTtl.historical;
 const OPEN_TTL = githubConfig.cacheTtl.openPrs;
+const BRANCHES_TTL = githubConfig.cacheTtl.branches;
+const BRANCH_PRS_TTL = githubConfig.cacheTtl.branchPrs;
+
+// Pinned to the top of the branch picker, in this order, whichever exist —
+// everything else sorts after them.
+const PRIORITY_BRANCHES = ['dev', 'main', 'master'];
+
+// Puts dev/main/master first, then sorts the rest with a numeric-aware
+// collator so e.g. release/2.79.x lists above release/2.77.x instead of
+// sorting purely lexically (which would put "2.77.x" after "2.9.x").
+function sortBranches(names) {
+  const collator = new Intl.Collator('en', { numeric: true, sensitivity: 'base' });
+  const priority = PRIORITY_BRANCHES.filter((p) => names.includes(p));
+  const rest = names
+    .filter((n) => !PRIORITY_BRANCHES.includes(n))
+    .sort((a, b) => collator.compare(b, a));
+  return [...priority, ...rest];
+}
 
 // --- Math helpers ---
 // Linear interpolation method — matches Excel PERCENTILE.INC and
@@ -359,6 +384,35 @@ const OPEN_PRS_QUERY = `
                    orderBy: { field: CREATED_AT, direction: DESC }) {
         pageInfo { hasNextPage endCursor }
         nodes { ${PR_FIELDS} }
+      }
+    }
+  }
+`;
+
+const BRANCHES_QUERY = `
+  query($owner: String!, $name: String!, $cursor: String) {
+    repository(owner: $owner, name: $name) {
+      refs(refPrefix: "refs/heads/", first: 100, after: $cursor) {
+        pageInfo { hasNextPage endCursor }
+        nodes { name }
+      }
+    }
+  }
+`;
+
+// Lighter than PR_FIELDS — no reviews/files, since this view is about
+// tracking status/follow-up, not cycle-time metrics.
+const BRANCH_PRS_QUERY = `
+  query($owner: String!, $name: String!, $branch: String!, $cursor: String) {
+    repository(owner: $owner, name: $name) {
+      pullRequests(baseRefName: $branch, states: [OPEN, MERGED, CLOSED],
+                   first: 50, after: $cursor,
+                   orderBy: { field: CREATED_AT, direction: DESC }) {
+        pageInfo { hasNextPage endCursor }
+        nodes {
+          number title url state isDraft createdAt mergedAt closedAt
+          author { login }
+        }
       }
     }
   }
@@ -698,6 +752,109 @@ async function fetchRepoOpenPRs(owner, repo) {
   );
 }
 
+async function fetchRepoBranches(owner, repo) {
+  const refs = await paginateGraphQL(
+    BRANCHES_QUERY,
+    { owner, name: repo },
+    (data) => data.repository?.refs,
+    (nodes, out) => {
+      for (const node of nodes) out.push(node.name);
+      return false;
+    },
+    { maxPages: 10 } // safety backstop (~1000 branches)
+  );
+  return refs;
+}
+
+function normalizeBranchPRNode(node, repo) {
+  return {
+    repo,
+    number: node.number,
+    title: node.title,
+    url: node.url,
+    author: node.author?.login || 'unknown',
+    state: node.state,
+    isDraft: node.isDraft || false,
+    createdAt: node.createdAt,
+    mergedAt: node.mergedAt,
+    closedAt: node.closedAt,
+  };
+}
+
+async function fetchRepoBranchPRs(owner, repo, branch) {
+  return paginateGraphQL(
+    BRANCH_PRS_QUERY,
+    { owner, name: repo, branch },
+    (data) => data.repository?.pullRequests,
+    (nodes, out) => {
+      for (const node of nodes) out.push(normalizeBranchPRNode(node, repo));
+      return false;
+    },
+    { maxPages: 20 } // safety backstop (~1000 PRs) — see plan's Performance considerations
+  );
+}
+
+async function getBranches(req, res, next) {
+  const { repo } = req.query;
+  if (!repo) return res.status(400).json({ error: 'repo query param is required' });
+  if (!githubConfig.repos.includes(repo)) {
+    return res.status(404).json({ error: 'Unknown repo' });
+  }
+
+  try {
+    const now = Date.now();
+    const cached = branchesCache.get(repo);
+    if (cached && now - cached.ts < BRANCHES_TTL) {
+      console.log(`[github] branches cache hit for ${repo}`);
+      return res.json(cached.data);
+    }
+
+    const names = await withRepoRetry(repo, () =>
+      fetchRepoBranches(config.github.org, repo)
+    );
+    const data = { repo, branches: sortBranches(names), fetchedAt: new Date().toISOString() };
+    branchesCache.set(repo, { data, ts: now });
+
+    console.log(`[github] branches fetched for ${repo} — ${data.branches.length} branches`);
+    res.json(data);
+  } catch (err) {
+    console.error(`[github] getBranches(${repo}) failed: ${err.message}`);
+    next(err);
+  }
+}
+
+async function getPRsByBranch(req, res, next) {
+  const { repo, branch } = req.query;
+  if (!repo || !branch) {
+    return res.status(400).json({ error: 'repo and branch query params are required' });
+  }
+  if (!githubConfig.repos.includes(repo)) {
+    return res.status(404).json({ error: 'Unknown repo' });
+  }
+
+  const cacheKey = `${repo}:${branch}`;
+  try {
+    const now = Date.now();
+    const cached = branchPrsCache.get(cacheKey);
+    if (cached && now - cached.ts < BRANCH_PRS_TTL) {
+      console.log(`[github] branch-PRs cache hit for ${cacheKey}`);
+      return res.json(cached.data);
+    }
+
+    const prs = await withRepoRetry(repo, () =>
+      fetchRepoBranchPRs(config.github.org, repo, branch)
+    );
+    const data = { repo, branch, prs, fetchedAt: new Date().toISOString() };
+    branchPrsCache.set(cacheKey, { data, ts: now });
+
+    console.log(`[github] branch-PRs fetched for ${cacheKey} — ${prs.length} PRs`);
+    res.json(data);
+  } catch (err) {
+    console.error(`[github] getPRsByBranch(${cacheKey}) failed: ${err.message}`);
+    next(err);
+  }
+}
+
 // Drafts aren't actually awaiting review yet, so they're excluded entirely.
 // Shared by the normal route handler and a single-repo retry.
 function mapOpenPRRecords(records, now) {
@@ -861,7 +1018,15 @@ async function retryRepo(req, res, next) {
   }
 }
 
-module.exports = { getSummary, getRepos, getOpenPRs, getProgress, retryRepo };
+module.exports = {
+  getSummary,
+  getRepos,
+  getOpenPRs,
+  getProgress,
+  retryRepo,
+  getBranches,
+  getPRsByBranch,
+};
 
 // Warm the cache on startup so the first page load is instant
 (async () => {
