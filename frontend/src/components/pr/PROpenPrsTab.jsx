@@ -42,7 +42,21 @@ const BASE_COLUMNS = [
     get: (p) => `${p.repo} ${p.branch || ''}`,
     width: '15%',
   },
-  { key: 'elapsedHours', label: 'Open For', get: (p) => p.elapsedHours ?? -1, width: '8%' },
+  {
+    key: 'elapsedHours',
+    label: 'Open For',
+    // Open PRs sort by hours-still-open (positive). Resolved PRs have no
+    // elapsedHours, so without a fallback they'd all tie at the same value
+    // and cluster in arbitrary (fetch) order — instead give them a negative
+    // "hours since resolved", so within the resolved cluster the most
+    // recently resolved sorts closest to the open PRs, oldest furthest away.
+    get: (p) => {
+      if (p.elapsedHours != null) return p.elapsedHours;
+      if (p.resolvedAt) return -(Date.now() - new Date(p.resolvedAt).getTime()) / 3_600_000;
+      return -Infinity;
+    },
+    width: '8%',
+  },
   { key: 'sizeLines', label: 'Lines', get: (p) => p.sizeLines, width: '8%' },
   { key: 'status', label: 'Status / Phase', get: (p) => p.status, width: '13%' },
 ];
@@ -87,19 +101,28 @@ export function PROpenPrsTab({ openPrs }) {
   const [resolvedPrs, setResolvedPrs] = useState(null);
   const [resolvedLoading, setResolvedLoading] = useState(false);
   const [resolvedError, setResolvedError] = useState(null);
+  const [resolvedFailedRepos, setResolvedFailedRepos] = useState([]);
 
   // Default: longest-open PR first, matching the backend's own default order
   const [sortKey, setSortKey] = useState('elapsedHours');
   const [sortDir, setSortDir] = useState('desc');
 
+  // Fetches every time the checkbox is turned on (not gated on "already
+  // fetched once") — githubService's own 5-min client cache already avoids a
+  // real network hit on quick re-checks, but once that TTL passes this
+  // actually gets fresh data instead of showing whatever was fetched
+  // arbitrarily long ago for the rest of the page's lifetime.
   function handleToggleResolved(e) {
     const checked = e.target.checked;
     setShowResolved(checked);
-    if (checked && resolvedPrs === null && !resolvedLoading) {
+    if (checked && !resolvedLoading) {
       setResolvedLoading(true);
       setResolvedError(null);
       fetchGHResolvedPRs()
-        .then((data) => setResolvedPrs(data.resolvedPRs || []))
+        .then((data) => {
+          setResolvedPrs(data.resolvedPRs || []);
+          setResolvedFailedRepos(data.failedRepos || []);
+        })
         .catch((err) => setResolvedError(err.message))
         .finally(() => setResolvedLoading(false));
     }
@@ -212,6 +235,11 @@ export function PROpenPrsTab({ openPrs }) {
         </label>
         {resolvedLoading && <span className="text-[12px] text-[#8896b0]">Loading…</span>}
         {resolvedError && <span className="text-[12px] text-[#c0392b]">{resolvedError}</span>}
+        {!resolvedError && resolvedFailedRepos.length > 0 && (
+          <span className="text-[12px] text-[#c0392b]">
+            Couldn't load merged/closed PRs for: {resolvedFailedRepos.join(', ')}
+          </span>
+        )}
       </div>
 
       <div className="flex flex-wrap gap-3">

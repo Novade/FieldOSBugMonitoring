@@ -866,6 +866,10 @@ async function getResolvedPRs(req, res, next) {
     const since = new Date(
       Date.now() - githubConfig.dataWindowDays * 24 * 60 * 60 * 1000
     );
+    // Tracked and returned (rather than just logged) so a repo hiccup during
+    // this fetch is visible to the frontend instead of silently shrinking
+    // the result — the 15-min cache would otherwise serve that gap quietly.
+    const failedRepos = [];
     const repoResults = await runWithConcurrency(
       repos.map(
         (repo) => () =>
@@ -875,6 +879,7 @@ async function getResolvedPRs(req, res, next) {
             console.warn(
               `[github] ${repo} resolved-PRs fetch failed: ${err.message}`
             );
+            failedRepos.push(repo);
             return [];
           })
       ),
@@ -884,12 +889,13 @@ async function getResolvedPRs(req, res, next) {
     const records = await fillTruncatedFiles(repoResults.flat());
     const resolvedPRs = mapResolvedPRRecords(records);
 
-    const result = { resolvedPRs, fetchedAt: new Date().toISOString() };
+    const result = { resolvedPRs, failedRepos, fetchedAt: new Date().toISOString() };
     resolvedPrsCache = result;
     resolvedPrsCacheTs = now;
 
     console.log(
-      `[github] resolved-prs fetched — ${resolvedPRs.length} merged/closed in last ${githubConfig.dataWindowDays}d across all repos`
+      `[github] resolved-prs fetched — ${resolvedPRs.length} merged/closed in last ${githubConfig.dataWindowDays}d across all repos` +
+        (failedRepos.length ? ` (failed: ${failedRepos.join(', ')})` : '')
     );
     res.json(result);
   } catch (err) {
