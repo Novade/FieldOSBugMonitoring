@@ -4,10 +4,9 @@ const {
   getSummary,
   getRepos,
   getOpenPRs,
+  getResolvedPRs,
   getProgress,
   retryRepo,
-  getBranches,
-  getPRsByBranch,
 } = require('../controllers/githubController');
 
 const router = express.Router();
@@ -15,9 +14,8 @@ const router = express.Router();
 router.get('/summary', requireAuth, getSummary);
 router.get('/repos', requireAuth, getRepos);
 router.get('/open-prs', requireAuth, getOpenPRs);
+router.get('/resolved-prs', requireAuth, getResolvedPRs);
 router.get('/progress', requireAuth, getProgress);
 router.post('/repos/:repo/retry', requireAuth, retryRepo);
-router.get('/branches', requireAuth, getBranches);
-router.get('/prs', requireAuth, getPRsByBranch);
 
 module.exports = router;

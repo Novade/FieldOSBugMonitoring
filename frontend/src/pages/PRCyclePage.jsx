@@ -4,7 +4,6 @@ import { PRKpiStrip } from '../components/pr/PRKpiStrip';
 import { PRTrendChart } from '../components/pr/PRTrendChart';
 import { PRRepoBarChart } from '../components/pr/PRRepoBarChart';
 import { PROpenPrsTab } from '../components/pr/PROpenPrsTab';
-import { PRBranchLookup } from '../components/pr/PRBranchLookup';
 import { PRLoadingState } from '../components/pr/PRLoadingState';
 import { FailedRepoNotice } from '../components/pr/FailedRepoNotice';
 import { Card } from '../components/common/Card';
@@ -14,12 +13,6 @@ import { formatSyncTime } from '../utils/dateUtils';
 const SECTIONS = [
   { id: 'lifecycle', label: 'PR Lifecycle' },
   { id: 'monitoring', label: 'PR Monitoring' },
-];
-
-const LEGEND_ITEMS = [
-  { color: '#c0392b', label: 'Breaching' },
-  { color: '#d97706', label: 'Close' },
-  { color: '#2e7d5e', label: 'Compliant' },
 ];
 
 // Each row pairs the per-repo breakdown (left) with the weekly trend (right)
@@ -157,26 +150,7 @@ export function PRCyclePage() {
         </>
       )}
 
-      {activeSection === 'monitoring' && (
-        <div className="flex flex-col gap-6">
-          <div className="flex gap-4 justify-end">
-            {LEGEND_ITEMS.map((item) => (
-              <div key={item.label} className="flex items-center gap-1.5 text-[12px] text-[#6b7a99]">
-                <span className="inline-block w-3 h-3 rounded-[2px]" style={{ backgroundColor: item.color }} />
-                {item.label}
-              </div>
-            ))}
-          </div>
-          <PROpenPrsTab openPrs={openPrs?.openPRs} />
-          <Card
-            accent="indigo"
-            title="PRs by Branch"
-            subtitle="Follow up on pending PRs targeting a specific branch (e.g. a release branch)"
-          >
-            <PRBranchLookup repoNames={(repos?.repos || []).map((r) => r.repo)} />
-          </Card>
-        </div>
-      )}
+      {activeSection === 'monitoring' && <PROpenPrsTab openPrs={openPrs?.openPRs} />}
     </div>
   );
 }

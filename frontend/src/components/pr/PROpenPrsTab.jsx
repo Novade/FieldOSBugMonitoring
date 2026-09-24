@@ -1,14 +1,23 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import { formatHoursShort } from '../../utils/dateUtils';
+import { fetchGHResolvedPRs } from '../../services/githubService';
+
+const LEGEND_ITEMS = [
+  { color: '#c0392b', label: 'Breaching' },
+  { color: '#d97706', label: 'Close' },
+  { color: '#2e7d5e', label: 'Compliant' },
+];
 
 // Each column declares how to extract its sortable value
 const COLUMNS = [
   { key: 'number', label: 'PR #', get: (p) => p.number },
   { key: 'author', label: 'Author', get: (p) => p.author },
   { key: 'repo', label: 'Repo', get: (p) => p.repo },
+  { key: 'branch', label: 'Branch', get: (p) => p.branch || '' },
   { key: 'createdAt', label: 'Created Date', get: (p) => new Date(p.createdAt).getTime() },
-  { key: 'elapsedHours', label: 'Open For', get: (p) => p.elapsedHours },
+  { key: 'elapsedHours', label: 'Open For', get: (p) => p.elapsedHours ?? -1 },
+  { key: 'resolvedAt', label: 'Resolved', get: (p) => (p.resolvedAt ? new Date(p.resolvedAt).getTime() : 0) },
   { key: 'sizeLines', label: 'Lines', get: (p) => p.sizeLines },
   { key: 'phase', label: 'Phase', get: (p) => p.phase },
   { key: 'status', label: 'Status', get: (p) => p.status },
@@ -28,6 +37,8 @@ function StatusPill({ status }) {
     Breached: 'bg-[#fde8e8] text-[#c0392b]',
     'At Risk': 'bg-[#fef3e2] text-[#d97706]',
     'On Track': 'bg-[#e4f4ed] text-[#2e7d5e]',
+    Merged: 'bg-[#eef0fc] text-[#5c4fa3]',
+    Closed: 'bg-[#f0f2f5] text-[#6b7a99]',
   };
   return (
     <span
@@ -71,27 +82,80 @@ function StatCard({ label, value, accent }) {
   );
 }
 
+const SELECT_CLASS =
+  'text-[13px] border border-[#dde2ea] rounded-lg px-3 py-2 bg-white text-[#1a2332] cursor-pointer';
+
 export function PROpenPrsTab({ openPrs }) {
+  const [selectedRepo, setSelectedRepo] = useState('all');
+  const [selectedBranch, setSelectedBranch] = useState('all');
+  const [showResolved, setShowResolved] = useState(false);
+  const [resolvedPrs, setResolvedPrs] = useState(null);
+  const [resolvedLoading, setResolvedLoading] = useState(false);
+  const [resolvedError, setResolvedError] = useState(null);
+
   // Default: newest PR first (latest created date at top), oldest at the bottom
   const [sortKey, setSortKey] = useState('createdAt');
   const [sortDir, setSortDir] = useState('desc');
 
+  function handleToggleResolved(e) {
+    const checked = e.target.checked;
+    setShowResolved(checked);
+    if (checked && resolvedPrs === null && !resolvedLoading) {
+      setResolvedLoading(true);
+      setResolvedError(null);
+      fetchGHResolvedPRs()
+        .then((data) => setResolvedPrs(data.resolvedPRs || []))
+        .catch((err) => setResolvedError(err.message))
+        .finally(() => setResolvedLoading(false));
+    }
+  }
+
+  const allPrs = useMemo(() => {
+    const base = openPrs || [];
+    return showResolved && resolvedPrs ? [...base, ...resolvedPrs] : base;
+  }, [openPrs, showResolved, resolvedPrs]);
+
+  const repoOptions = useMemo(
+    () => [...new Set(allPrs.map((p) => p.repo))].sort(),
+    [allPrs]
+  );
+
+  const branchOptions = useMemo(() => {
+    const pool = selectedRepo === 'all' ? allPrs : allPrs.filter((p) => p.repo === selectedRepo);
+    return [...new Set(pool.map((p) => p.branch).filter(Boolean))].sort();
+  }, [allPrs, selectedRepo]);
+
+  useEffect(() => {
+    if (selectedBranch !== 'all' && !branchOptions.includes(selectedBranch)) {
+      setSelectedBranch('all');
+    }
+  }, [branchOptions, selectedBranch]);
+
+  const filteredPrs = useMemo(
+    () =>
+      allPrs.filter(
+        (p) =>
+          (selectedRepo === 'all' || p.repo === selectedRepo) &&
+          (selectedBranch === 'all' || p.branch === selectedBranch)
+      ),
+    [allPrs, selectedRepo, selectedBranch]
+  );
+
   const stats = useMemo(() => {
-    if (!openPrs?.length) return { total: 0, breached: 0, atRisk: 0, onTrack: 0 };
+    const openOnly = filteredPrs.filter((p) => p.state === 'OPEN');
     return {
-      total: openPrs.length,
-      breached: openPrs.filter((p) => p.status === 'Breached').length,
-      atRisk: openPrs.filter((p) => p.status === 'At Risk').length,
-      onTrack: openPrs.filter((p) => p.status === 'On Track').length,
+      total: openOnly.length,
+      breached: openOnly.filter((p) => p.status === 'Breached').length,
+      atRisk: openOnly.filter((p) => p.status === 'At Risk').length,
+      onTrack: openOnly.filter((p) => p.status === 'On Track').length,
     };
-  }, [openPrs]);
+  }, [filteredPrs]);
 
   const sortedPrs = useMemo(() => {
-    if (!openPrs?.length) return [];
     const col = COLUMNS.find((c) => c.key === sortKey);
-    if (!col) return openPrs;
+    if (!col) return filteredPrs;
     const dir = sortDir === 'asc' ? 1 : -1;
-    return [...openPrs].sort((a, b) => {
+    return [...filteredPrs].sort((a, b) => {
       const av = col.get(a);
       const bv = col.get(b);
       if (typeof av === 'string' || typeof bv === 'string') {
@@ -99,7 +163,7 @@ export function PROpenPrsTab({ openPrs }) {
       }
       return (av - bv) * dir;
     });
-  }, [openPrs, sortKey, sortDir]);
+  }, [filteredPrs, sortKey, sortDir]);
 
   function handleSort(key) {
     if (key === sortKey) {
@@ -116,6 +180,50 @@ export function PROpenPrsTab({ openPrs }) {
 
   return (
     <div className="flex flex-col gap-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <select
+            value={selectedRepo}
+            onChange={(e) => setSelectedRepo(e.target.value)}
+            className={SELECT_CLASS}
+          >
+            <option value="all">All Repos</option>
+            {repoOptions.map((r) => (
+              <option key={r} value={r}>
+                {r}
+              </option>
+            ))}
+          </select>
+          <select
+            value={selectedBranch}
+            onChange={(e) => setSelectedBranch(e.target.value)}
+            className={SELECT_CLASS}
+          >
+            <option value="all">All Branches</option>
+            {branchOptions.map((b) => (
+              <option key={b} value={b}>
+                {b}
+              </option>
+            ))}
+          </select>
+          <label className="flex items-center gap-1.5 text-[13px] text-[#4a5568] cursor-pointer select-none">
+            <input type="checkbox" checked={showResolved} onChange={handleToggleResolved} />
+            Show merged/closed (last 30 days)
+          </label>
+          {resolvedLoading && <span className="text-[12px] text-[#8896b0]">Loading…</span>}
+          {resolvedError && <span className="text-[12px] text-[#c0392b]">{resolvedError}</span>}
+        </div>
+
+        <div className="flex gap-4">
+          {LEGEND_ITEMS.map((item) => (
+            <div key={item.label} className="flex items-center gap-1.5 text-[12px] text-[#6b7a99]">
+              <span className="inline-block w-3 h-3 rounded-[2px]" style={{ backgroundColor: item.color }} />
+              {item.label}
+            </div>
+          ))}
+        </div>
+      </div>
+
       <div className="flex flex-wrap gap-3">
         <StatCard label="Total Open" value={stats.total} accent="blue" />
         <StatCard label="Breached (>24h)" value={stats.breached} accent="rose" />
@@ -123,8 +231,8 @@ export function PROpenPrsTab({ openPrs }) {
         <StatCard label="On Track" value={stats.onTrack} accent="teal" />
       </div>
 
-      {openPrs.length === 0 ? (
-        <div className="text-[#8896b0] text-sm py-6 text-center">No open PRs.</div>
+      {sortedPrs.length === 0 ? (
+        <div className="text-[#8896b0] text-sm py-6 text-center">No PRs match the current filters.</div>
       ) : (
         <div className="border border-[#dde2ea] rounded-lg overflow-hidden">
           <div className="max-h-[520px] overflow-auto">
@@ -176,10 +284,12 @@ export function PROpenPrsTab({ openPrs }) {
                   </td>
                   <td className="px-4 py-2.5 text-[#6b7a99] whitespace-nowrap">{pr.author}</td>
                   <td className="px-4 py-2.5 text-[#6b7a99] whitespace-nowrap">{pr.repo}</td>
+                  <td className="px-4 py-2.5 text-[#6b7a99] whitespace-nowrap">{pr.branch || '—'}</td>
                   <td className="px-4 py-2.5 text-[#6b7a99] whitespace-nowrap">{formatDate(pr.createdAt)}</td>
                   <td className="px-4 py-2.5 text-[#1a2332] whitespace-nowrap font-medium">
-                    {formatHoursShort(pr.elapsedHours)}
+                    {pr.elapsedHours != null ? formatHoursShort(pr.elapsedHours) : '—'}
                   </td>
+                  <td className="px-4 py-2.5 text-[#6b7a99] whitespace-nowrap">{formatDate(pr.resolvedAt)}</td>
                   <td className="px-4 py-2.5 text-[#6b7a99] whitespace-nowrap">
                     <span className="text-[#2e7d5e]">+{pr.additions}</span>
                     {' '}

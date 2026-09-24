@@ -91,21 +91,12 @@ export async function retryGHRepo(repo) {
   }
 }
 
-export function fetchGHBranches(repo) {
-  return withCache(`gh-branches-${repo}`, async () => {
+// On-demand — only fetched when the "show merged/closed" toggle is switched
+// on, so it doesn't add to the default page load.
+export function fetchGHResolvedPRs() {
+  return withCache('gh-resolved-prs', async () => {
     try {
-      const res = await api.get('/api/github/branches', { params: { repo } });
-      return res.data;
-    } catch (err) {
-      throw new Error(extractError(err));
-    }
-  });
-}
-
-export function fetchGHPRsByBranch(repo, branch) {
-  return withCache(`gh-prs-${repo}-${branch}`, async () => {
-    try {
-      const res = await api.get('/api/github/prs', { params: { repo, branch } });
+      const res = await api.get('/api/github/resolved-prs');
       return res.data;
     } catch (err) {
       throw new Error(extractError(err));

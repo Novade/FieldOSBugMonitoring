@@ -163,13 +163,8 @@ let reposCache = null,
   reposCacheTs = 0;
 let openPrsCache = null,
   openPrsCacheTs = 0;
-
-// Per-repo branch lists and per-repo-per-branch PR lists — both scoped to a
-// single repo (chosen by the user before either is fetched), so a flat
-// Map keyed by repo (or `repo:branch`) is simpler than the array+timestamp
-// pairs above, which only ever hold one all-repos snapshot at a time.
-const branchesCache = new Map(); // repo -> { data, ts }
-const branchPrsCache = new Map(); // `${repo}:${branch}` -> { data, ts }
+let resolvedPrsCache = null,
+  resolvedPrsCacheTs = 0;
 
 // In-memory fetch-progress tracker — lets the frontend show real per-repo
 // status ("fetching NovadeLite…") during a cold-cache load instead of a
@@ -203,24 +198,7 @@ function markRepoStatus(repo, kind, ok) {
 
 const HIST_TTL = githubConfig.cacheTtl.historical;
 const OPEN_TTL = githubConfig.cacheTtl.openPrs;
-const BRANCHES_TTL = githubConfig.cacheTtl.branches;
-const BRANCH_PRS_TTL = githubConfig.cacheTtl.branchPrs;
-
-// Pinned to the top of the branch picker, in this order, whichever exist —
-// everything else sorts after them.
-const PRIORITY_BRANCHES = ['dev', 'main', 'master'];
-
-// Puts dev/main/master first, then sorts the rest with a numeric-aware
-// collator so e.g. release/2.79.x lists above release/2.77.x instead of
-// sorting purely lexically (which would put "2.77.x" after "2.9.x").
-function sortBranches(names) {
-  const collator = new Intl.Collator('en', { numeric: true, sensitivity: 'base' });
-  const priority = PRIORITY_BRANCHES.filter((p) => names.includes(p));
-  const rest = names
-    .filter((n) => !PRIORITY_BRANCHES.includes(n))
-    .sort((a, b) => collator.compare(b, a));
-  return [...priority, ...rest];
-}
+const RESOLVED_TTL = githubConfig.cacheTtl.resolvedPrs;
 
 // --- Math helpers ---
 // Linear interpolation method — matches Excel PERCENTILE.INC and
@@ -328,12 +306,14 @@ function getPhase(reviews, reviewDecision) {
 function normalizePRNode(node, repo) {
   return {
     repo,
+    branch: node.baseRefName,
     number: node.number,
     title: node.title,
     url: node.url,
     author: node.author?.login || 'unknown',
     createdAt: node.createdAt,
     mergedAt: node.mergedAt,
+    closedAt: node.closedAt,
     isDraft: node.isDraft || false,
     reviewDecision: node.reviewDecision || null,
     reviews: (node.reviews?.nodes || []).map((r) => ({
@@ -353,7 +333,7 @@ function normalizePRNode(node, repo) {
 
 // --- GraphQL queries ---
 const PR_FIELDS = `
-  number title url createdAt mergedAt isDraft
+  number title url createdAt mergedAt closedAt isDraft baseRefName
   author { login }
   reviewDecision
   reviews(first: 20) {
@@ -389,30 +369,15 @@ const OPEN_PRS_QUERY = `
   }
 `;
 
-const BRANCHES_QUERY = `
+// Same shape as MERGED_PRS_QUERY but also pulls in CLOSED (non-merged) PRs —
+// powers the PR Monitoring table's on-demand "show merged/closed" toggle.
+const RESOLVED_PRS_QUERY = `
   query($owner: String!, $name: String!, $cursor: String) {
     repository(owner: $owner, name: $name) {
-      refs(refPrefix: "refs/heads/", first: 100, after: $cursor) {
-        pageInfo { hasNextPage endCursor }
-        nodes { name }
-      }
-    }
-  }
-`;
-
-// Lighter than PR_FIELDS — no reviews/files, since this view is about
-// tracking status/follow-up, not cycle-time metrics.
-const BRANCH_PRS_QUERY = `
-  query($owner: String!, $name: String!, $branch: String!, $cursor: String) {
-    repository(owner: $owner, name: $name) {
-      pullRequests(baseRefName: $branch, states: [OPEN, MERGED, CLOSED],
-                   first: 50, after: $cursor,
+      pullRequests(states: [MERGED, CLOSED], first: 100, after: $cursor,
                    orderBy: { field: CREATED_AT, direction: DESC }) {
         pageInfo { hasNextPage endCursor }
-        nodes {
-          number title url state isDraft createdAt mergedAt closedAt
-          author { login }
-        }
+        nodes { ${PR_FIELDS} }
       }
     }
   }
@@ -497,6 +462,29 @@ async function fetchRepoMergedPRs(owner, repo, since) {
       for (const node of nodes) {
         if (new Date(node.createdAt) < createdSince) return true; // hit boundary
         if (node.mergedAt && new Date(node.mergedAt) >= since) {
+          out.push(normalizePRNode(node, repo));
+        }
+      }
+      return false;
+    },
+    { maxPages: 40 } // safety backstop (~1000 PRs/repo)
+  );
+}
+
+// Same windowing approach as fetchRepoMergedPRs, but includes CLOSED
+// (non-merged) PRs too — resolved by either mergedAt or closedAt falling
+// inside the window.
+async function fetchRepoResolvedPRs(owner, repo, since) {
+  const createdSince = new Date(since.getTime() - 14 * 24 * 60 * 60 * 1000);
+  return paginateGraphQL(
+    RESOLVED_PRS_QUERY,
+    { owner, name: repo },
+    (data) => data.repository?.pullRequests,
+    (nodes, out) => {
+      for (const node of nodes) {
+        if (new Date(node.createdAt) < createdSince) return true; // hit boundary
+        const resolvedAt = node.mergedAt || node.closedAt;
+        if (resolvedAt && new Date(resolvedAt) >= since) {
           out.push(normalizePRNode(node, repo));
         }
       }
@@ -752,109 +740,6 @@ async function fetchRepoOpenPRs(owner, repo) {
   );
 }
 
-async function fetchRepoBranches(owner, repo) {
-  const refs = await paginateGraphQL(
-    BRANCHES_QUERY,
-    { owner, name: repo },
-    (data) => data.repository?.refs,
-    (nodes, out) => {
-      for (const node of nodes) out.push(node.name);
-      return false;
-    },
-    { maxPages: 10 } // safety backstop (~1000 branches)
-  );
-  return refs;
-}
-
-function normalizeBranchPRNode(node, repo) {
-  return {
-    repo,
-    number: node.number,
-    title: node.title,
-    url: node.url,
-    author: node.author?.login || 'unknown',
-    state: node.state,
-    isDraft: node.isDraft || false,
-    createdAt: node.createdAt,
-    mergedAt: node.mergedAt,
-    closedAt: node.closedAt,
-  };
-}
-
-async function fetchRepoBranchPRs(owner, repo, branch) {
-  return paginateGraphQL(
-    BRANCH_PRS_QUERY,
-    { owner, name: repo, branch },
-    (data) => data.repository?.pullRequests,
-    (nodes, out) => {
-      for (const node of nodes) out.push(normalizeBranchPRNode(node, repo));
-      return false;
-    },
-    { maxPages: 20 } // safety backstop (~1000 PRs) — see plan's Performance considerations
-  );
-}
-
-async function getBranches(req, res, next) {
-  const { repo } = req.query;
-  if (!repo) return res.status(400).json({ error: 'repo query param is required' });
-  if (!githubConfig.repos.includes(repo)) {
-    return res.status(404).json({ error: 'Unknown repo' });
-  }
-
-  try {
-    const now = Date.now();
-    const cached = branchesCache.get(repo);
-    if (cached && now - cached.ts < BRANCHES_TTL) {
-      console.log(`[github] branches cache hit for ${repo}`);
-      return res.json(cached.data);
-    }
-
-    const names = await withRepoRetry(repo, () =>
-      fetchRepoBranches(config.github.org, repo)
-    );
-    const data = { repo, branches: sortBranches(names), fetchedAt: new Date().toISOString() };
-    branchesCache.set(repo, { data, ts: now });
-
-    console.log(`[github] branches fetched for ${repo} — ${data.branches.length} branches`);
-    res.json(data);
-  } catch (err) {
-    console.error(`[github] getBranches(${repo}) failed: ${err.message}`);
-    next(err);
-  }
-}
-
-async function getPRsByBranch(req, res, next) {
-  const { repo, branch } = req.query;
-  if (!repo || !branch) {
-    return res.status(400).json({ error: 'repo and branch query params are required' });
-  }
-  if (!githubConfig.repos.includes(repo)) {
-    return res.status(404).json({ error: 'Unknown repo' });
-  }
-
-  const cacheKey = `${repo}:${branch}`;
-  try {
-    const now = Date.now();
-    const cached = branchPrsCache.get(cacheKey);
-    if (cached && now - cached.ts < BRANCH_PRS_TTL) {
-      console.log(`[github] branch-PRs cache hit for ${cacheKey}`);
-      return res.json(cached.data);
-    }
-
-    const prs = await withRepoRetry(repo, () =>
-      fetchRepoBranchPRs(config.github.org, repo, branch)
-    );
-    const data = { repo, branch, prs, fetchedAt: new Date().toISOString() };
-    branchPrsCache.set(cacheKey, { data, ts: now });
-
-    console.log(`[github] branch-PRs fetched for ${cacheKey} — ${prs.length} PRs`);
-    res.json(data);
-  } catch (err) {
-    console.error(`[github] getPRsByBranch(${cacheKey}) failed: ${err.message}`);
-    next(err);
-  }
-}
-
 // Drafts aren't actually awaiting review yet, so they're excluded entirely.
 // Shared by the normal route handler and a single-repo retry.
 function mapOpenPRRecords(records, now) {
@@ -873,11 +758,14 @@ function mapOpenPRRecords(records, now) {
 
       return {
         repo: rec.repo,
+        branch: rec.branch,
         number: rec.number,
         title: rec.title,
         author: rec.author,
         url: rec.url,
+        state: 'OPEN',
         elapsedHours: parseFloat(elapsedHours.toFixed(1)),
+        resolvedAt: null,
         sizeLines: size.lines,
         additions: size.additions,
         deletions: size.deletions,
@@ -886,6 +774,35 @@ function mapOpenPRRecords(records, now) {
         createdAt: rec.createdAt,
       };
     });
+}
+
+// Shared by the normal route handler and a single-repo retry. Unlike open
+// PRs, "status" here isn't an SLA breach state — it's just the resolution
+// (Merged/Closed), so the table's Status pill reads sensibly either way.
+function mapResolvedPRRecords(records) {
+  return records.map((rec) => {
+    const size = computePRSize(rec.files);
+    const phase = getPhase(rec.reviews, rec.reviewDecision);
+    const state = rec.mergedAt ? 'MERGED' : 'CLOSED';
+
+    return {
+      repo: rec.repo,
+      branch: rec.branch,
+      number: rec.number,
+      title: rec.title,
+      author: rec.author,
+      url: rec.url,
+      state,
+      elapsedHours: null,
+      resolvedAt: rec.mergedAt || rec.closedAt,
+      sizeLines: size.lines,
+      additions: size.additions,
+      deletions: size.deletions,
+      phase,
+      status: state === 'MERGED' ? 'Merged' : 'Closed',
+      createdAt: rec.createdAt,
+    };
+  });
 }
 
 async function getOpenPRs(req, res, next) {
@@ -930,6 +847,53 @@ async function getOpenPRs(req, res, next) {
     res.json(result);
   } catch (err) {
     console.error(`[github] getOpenPRs failed: ${err.message}`);
+    next(err);
+  }
+}
+
+// On-demand dataset backing the PR Monitoring table's "show merged/closed"
+// toggle — not fetched on page load, only when a user switches it on, so it
+// doesn't add to the already-heavy default PR Cycles load.
+async function getResolvedPRs(req, res, next) {
+  try {
+    const now = Date.now();
+    if (resolvedPrsCache && now - resolvedPrsCacheTs < RESOLVED_TTL) {
+      console.log('[github] resolved-prs cache hit');
+      return res.json(resolvedPrsCache);
+    }
+
+    const repos = githubConfig.repos;
+    const since = new Date(
+      Date.now() - githubConfig.dataWindowDays * 24 * 60 * 60 * 1000
+    );
+    const repoResults = await runWithConcurrency(
+      repos.map(
+        (repo) => () =>
+          withRepoRetry(repo, () =>
+            fetchRepoResolvedPRs(config.github.org, repo, since)
+          ).catch((err) => {
+            console.warn(
+              `[github] ${repo} resolved-PRs fetch failed: ${err.message}`
+            );
+            return [];
+          })
+      ),
+      7
+    );
+
+    const records = await fillTruncatedFiles(repoResults.flat());
+    const resolvedPRs = mapResolvedPRRecords(records);
+
+    const result = { resolvedPRs, fetchedAt: new Date().toISOString() };
+    resolvedPrsCache = result;
+    resolvedPrsCacheTs = now;
+
+    console.log(
+      `[github] resolved-prs fetched — ${resolvedPRs.length} merged/closed in last ${githubConfig.dataWindowDays}d across all repos`
+    );
+    res.json(result);
+  } catch (err) {
+    console.error(`[github] getResolvedPRs failed: ${err.message}`);
     next(err);
   }
 }
@@ -1022,10 +986,9 @@ module.exports = {
   getSummary,
   getRepos,
   getOpenPRs,
+  getResolvedPRs,
   getProgress,
   retryRepo,
-  getBranches,
-  getPRsByBranch,
 };
 
 // Warm the cache on startup so the first page load is instant
