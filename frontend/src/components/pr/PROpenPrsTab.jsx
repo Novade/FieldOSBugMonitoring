@@ -79,6 +79,8 @@ const SELECT_CLASS =
 export function PROpenPrsTab({ openPrs }) {
   const [selectedRepo, setSelectedRepo] = useState('all');
   const [selectedBranch, setSelectedBranch] = useState('all');
+  const [selectedStatus, setSelectedStatus] = useState('all');
+  const [selectedPhase, setSelectedPhase] = useState('all');
   const [showResolved, setShowResolved] = useState(false);
   const [resolvedPrs, setResolvedPrs] = useState(null);
   const [resolvedLoading, setResolvedLoading] = useState(false);
@@ -122,14 +124,38 @@ export function PROpenPrsTab({ openPrs }) {
     }
   }, [branchOptions, selectedBranch]);
 
+  const statusOptions = useMemo(
+    () => [...new Set(allPrs.map((p) => p.status))].sort(),
+    [allPrs]
+  );
+
+  const phaseOptions = useMemo(
+    () => [...new Set(allPrs.map((p) => p.phase).filter(Boolean))].sort(),
+    [allPrs]
+  );
+
+  useEffect(() => {
+    if (selectedStatus !== 'all' && !statusOptions.includes(selectedStatus)) {
+      setSelectedStatus('all');
+    }
+  }, [statusOptions, selectedStatus]);
+
+  useEffect(() => {
+    if (selectedPhase !== 'all' && !phaseOptions.includes(selectedPhase)) {
+      setSelectedPhase('all');
+    }
+  }, [phaseOptions, selectedPhase]);
+
   const filteredPrs = useMemo(
     () =>
       allPrs.filter(
         (p) =>
           (selectedRepo === 'all' || p.repo === selectedRepo) &&
-          (selectedBranch === 'all' || p.branch === selectedBranch)
+          (selectedBranch === 'all' || p.branch === selectedBranch) &&
+          (selectedStatus === 'all' || p.status === selectedStatus) &&
+          (selectedPhase === 'all' || p.phase === selectedPhase)
       ),
-    [allPrs, selectedRepo, selectedBranch]
+    [allPrs, selectedRepo, selectedBranch, selectedStatus, selectedPhase]
   );
 
   const stats = useMemo(() => {
@@ -156,11 +182,14 @@ export function PROpenPrsTab({ openPrs }) {
     });
   }, [filteredPrs, sortKey, sortDir]);
 
-  const filtersActive = selectedRepo !== 'all' || selectedBranch !== 'all';
+  const filtersActive =
+    selectedRepo !== 'all' || selectedBranch !== 'all' || selectedStatus !== 'all' || selectedPhase !== 'all';
 
   function clearFilters() {
     setSelectedRepo('all');
     setSelectedBranch('all');
+    setSelectedStatus('all');
+    setSelectedPhase('all');
   }
 
   function handleSort(key) {
@@ -204,6 +233,30 @@ export function PROpenPrsTab({ openPrs }) {
               </option>
             ))}
           </select>
+          <select
+            value={selectedStatus}
+            onChange={(e) => setSelectedStatus(e.target.value)}
+            className={SELECT_CLASS}
+          >
+            <option value="all">All Statuses</option>
+            {statusOptions.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+          <select
+            value={selectedPhase}
+            onChange={(e) => setSelectedPhase(e.target.value)}
+            className={SELECT_CLASS}
+          >
+            <option value="all">All Phases</option>
+            {phaseOptions.map((p) => (
+              <option key={p} value={p}>
+                {p}
+              </option>
+            ))}
+          </select>
           <button
             type="button"
             onClick={clearFilters}
@@ -215,12 +268,6 @@ export function PROpenPrsTab({ openPrs }) {
             <X size={13} />
             Clear filters
           </button>
-          <label className="flex items-center gap-1.5 text-[13px] text-[#4a5568] cursor-pointer select-none">
-            <input type="checkbox" checked={showResolved} onChange={handleToggleResolved} />
-            Show merged/closed (last 30 days)
-          </label>
-          {resolvedLoading && <span className="text-[12px] text-[#8896b0]">Loading…</span>}
-          {resolvedError && <span className="text-[12px] text-[#c0392b]">{resolvedError}</span>}
         </div>
 
         <div className="flex gap-4">
@@ -231,6 +278,15 @@ export function PROpenPrsTab({ openPrs }) {
             </div>
           ))}
         </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3">
+        <label className="flex items-center gap-1.5 text-[13px] text-[#4a5568] cursor-pointer select-none">
+          <input type="checkbox" checked={showResolved} onChange={handleToggleResolved} />
+          Show merged/closed (last 30 days)
+        </label>
+        {resolvedLoading && <span className="text-[12px] text-[#8896b0]">Loading…</span>}
+        {resolvedError && <span className="text-[12px] text-[#c0392b]">{resolvedError}</span>}
       </div>
 
       <div className="flex flex-wrap gap-3">
