@@ -91,3 +91,16 @@ export async function retryGHRepo(repo) {
   }
 }
 
+// On-demand — only fetched when the "show merged/closed" toggle is switched
+// on, so it doesn't add to the default page load.
+export function fetchGHResolvedPRs() {
+  return withCache('gh-resolved-prs', async () => {
+    try {
+      const res = await api.get('/api/github/resolved-prs');
+      return res.data;
+    } catch (err) {
+      throw new Error(extractError(err));
+    }
+  });
+}
+

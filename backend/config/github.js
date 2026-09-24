@@ -47,5 +47,6 @@ module.exports = {
     // limit points out of 5,000/hour), so a short TTL is safe.
     historical: 15 * 60 * 1000,
     openPrs: 15 * 60 * 1000,
+    resolvedPrs: 15 * 60 * 1000,
   },
 };

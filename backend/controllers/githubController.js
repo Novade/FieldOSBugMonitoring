@@ -163,6 +163,8 @@ let reposCache = null,
   reposCacheTs = 0;
 let openPrsCache = null,
   openPrsCacheTs = 0;
+let resolvedPrsCache = null,
+  resolvedPrsCacheTs = 0;
 
 // In-memory fetch-progress tracker — lets the frontend show real per-repo
 // status ("fetching NovadeLite…") during a cold-cache load instead of a
@@ -196,6 +198,7 @@ function markRepoStatus(repo, kind, ok) {
 
 const HIST_TTL = githubConfig.cacheTtl.historical;
 const OPEN_TTL = githubConfig.cacheTtl.openPrs;
+const RESOLVED_TTL = githubConfig.cacheTtl.resolvedPrs;
 
 // --- Math helpers ---
 // Linear interpolation method — matches Excel PERCENTILE.INC and
@@ -303,12 +306,14 @@ function getPhase(reviews, reviewDecision) {
 function normalizePRNode(node, repo) {
   return {
     repo,
+    branch: node.baseRefName,
     number: node.number,
     title: node.title,
     url: node.url,
     author: node.author?.login || 'unknown',
     createdAt: node.createdAt,
     mergedAt: node.mergedAt,
+    closedAt: node.closedAt,
     isDraft: node.isDraft || false,
     reviewDecision: node.reviewDecision || null,
     reviews: (node.reviews?.nodes || []).map((r) => ({
@@ -328,7 +333,7 @@ function normalizePRNode(node, repo) {
 
 // --- GraphQL queries ---
 const PR_FIELDS = `
-  number title url createdAt mergedAt isDraft
+  number title url createdAt mergedAt closedAt isDraft baseRefName
   author { login }
   reviewDecision
   reviews(first: 20) {
@@ -356,6 +361,20 @@ const OPEN_PRS_QUERY = `
   query($owner: String!, $name: String!, $cursor: String) {
     repository(owner: $owner, name: $name) {
       pullRequests(states: OPEN, first: 25, after: $cursor,
+                   orderBy: { field: CREATED_AT, direction: DESC }) {
+        pageInfo { hasNextPage endCursor }
+        nodes { ${PR_FIELDS} }
+      }
+    }
+  }
+`;
+
+// Same shape as MERGED_PRS_QUERY but also pulls in CLOSED (non-merged) PRs —
+// powers the PR Monitoring table's on-demand "show merged/closed" toggle.
+const RESOLVED_PRS_QUERY = `
+  query($owner: String!, $name: String!, $cursor: String) {
+    repository(owner: $owner, name: $name) {
+      pullRequests(states: [MERGED, CLOSED], first: 100, after: $cursor,
                    orderBy: { field: CREATED_AT, direction: DESC }) {
         pageInfo { hasNextPage endCursor }
         nodes { ${PR_FIELDS} }
@@ -443,6 +462,29 @@ async function fetchRepoMergedPRs(owner, repo, since) {
       for (const node of nodes) {
         if (new Date(node.createdAt) < createdSince) return true; // hit boundary
         if (node.mergedAt && new Date(node.mergedAt) >= since) {
+          out.push(normalizePRNode(node, repo));
+        }
+      }
+      return false;
+    },
+    { maxPages: 40 } // safety backstop (~1000 PRs/repo)
+  );
+}
+
+// Same windowing approach as fetchRepoMergedPRs, but includes CLOSED
+// (non-merged) PRs too — resolved by either mergedAt or closedAt falling
+// inside the window.
+async function fetchRepoResolvedPRs(owner, repo, since) {
+  const createdSince = new Date(since.getTime() - 14 * 24 * 60 * 60 * 1000);
+  return paginateGraphQL(
+    RESOLVED_PRS_QUERY,
+    { owner, name: repo },
+    (data) => data.repository?.pullRequests,
+    (nodes, out) => {
+      for (const node of nodes) {
+        if (new Date(node.createdAt) < createdSince) return true; // hit boundary
+        const resolvedAt = node.mergedAt || node.closedAt;
+        if (resolvedAt && new Date(resolvedAt) >= since) {
           out.push(normalizePRNode(node, repo));
         }
       }
@@ -716,11 +758,14 @@ function mapOpenPRRecords(records, now) {
 
       return {
         repo: rec.repo,
+        branch: rec.branch,
         number: rec.number,
         title: rec.title,
         author: rec.author,
         url: rec.url,
+        state: 'OPEN',
         elapsedHours: parseFloat(elapsedHours.toFixed(1)),
+        resolvedAt: null,
         sizeLines: size.lines,
         additions: size.additions,
         deletions: size.deletions,
@@ -729,6 +774,35 @@ function mapOpenPRRecords(records, now) {
         createdAt: rec.createdAt,
       };
     });
+}
+
+// Shared by the normal route handler and a single-repo retry. Unlike open
+// PRs, "status" here isn't an SLA breach state — it's just the resolution
+// (Merged/Closed), so the table's Status pill reads sensibly either way.
+function mapResolvedPRRecords(records) {
+  return records.map((rec) => {
+    const size = computePRSize(rec.files);
+    const phase = getPhase(rec.reviews, rec.reviewDecision);
+    const state = rec.mergedAt ? 'MERGED' : 'CLOSED';
+
+    return {
+      repo: rec.repo,
+      branch: rec.branch,
+      number: rec.number,
+      title: rec.title,
+      author: rec.author,
+      url: rec.url,
+      state,
+      elapsedHours: null,
+      resolvedAt: rec.mergedAt || rec.closedAt,
+      sizeLines: size.lines,
+      additions: size.additions,
+      deletions: size.deletions,
+      phase,
+      status: state === 'MERGED' ? 'Merged' : 'Closed',
+      createdAt: rec.createdAt,
+    };
+  });
 }
 
 async function getOpenPRs(req, res, next) {
@@ -773,6 +847,59 @@ async function getOpenPRs(req, res, next) {
     res.json(result);
   } catch (err) {
     console.error(`[github] getOpenPRs failed: ${err.message}`);
+    next(err);
+  }
+}
+
+// On-demand dataset backing the PR Monitoring table's "show merged/closed"
+// toggle — not fetched on page load, only when a user switches it on, so it
+// doesn't add to the already-heavy default PR Cycles load.
+async function getResolvedPRs(req, res, next) {
+  try {
+    const now = Date.now();
+    if (resolvedPrsCache && now - resolvedPrsCacheTs < RESOLVED_TTL) {
+      console.log('[github] resolved-prs cache hit');
+      return res.json(resolvedPrsCache);
+    }
+
+    const repos = githubConfig.repos;
+    const since = new Date(
+      Date.now() - githubConfig.dataWindowDays * 24 * 60 * 60 * 1000
+    );
+    // Tracked and returned (rather than just logged) so a repo hiccup during
+    // this fetch is visible to the frontend instead of silently shrinking
+    // the result — the 15-min cache would otherwise serve that gap quietly.
+    const failedRepos = [];
+    const repoResults = await runWithConcurrency(
+      repos.map(
+        (repo) => () =>
+          withRepoRetry(repo, () =>
+            fetchRepoResolvedPRs(config.github.org, repo, since)
+          ).catch((err) => {
+            console.warn(
+              `[github] ${repo} resolved-PRs fetch failed: ${err.message}`
+            );
+            failedRepos.push(repo);
+            return [];
+          })
+      ),
+      7
+    );
+
+    const records = await fillTruncatedFiles(repoResults.flat());
+    const resolvedPRs = mapResolvedPRRecords(records);
+
+    const result = { resolvedPRs, failedRepos, fetchedAt: new Date().toISOString() };
+    resolvedPrsCache = result;
+    resolvedPrsCacheTs = now;
+
+    console.log(
+      `[github] resolved-prs fetched — ${resolvedPRs.length} merged/closed in last ${githubConfig.dataWindowDays}d across all repos` +
+        (failedRepos.length ? ` (failed: ${failedRepos.join(', ')})` : '')
+    );
+    res.json(result);
+  } catch (err) {
+    console.error(`[github] getResolvedPRs failed: ${err.message}`);
     next(err);
   }
 }
@@ -861,7 +988,14 @@ async function retryRepo(req, res, next) {
   }
 }
 
-module.exports = { getSummary, getRepos, getOpenPRs, getProgress, retryRepo };
+module.exports = {
+  getSummary,
+  getRepos,
+  getOpenPRs,
+  getResolvedPRs,
+  getProgress,
+  retryRepo,
+};
 
 // Warm the cache on startup so the first page load is instant
 (async () => {

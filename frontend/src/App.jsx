@@ -32,7 +32,6 @@ export default function App() {
               <MainLayout>
                 <Routes>
                   <Route path="bugs/*" element={<AllBugsPage />} />
-                  <Route path="regression/*" element={<AllBugsPage />} />
                   <Route path="client-bugs" element={<Navigate to="/workspace/per-client" replace />} />
                   <Route path="workspace/global" element={<WorkspaceGlobalPage />} />
                   <Route path="workspace/per-client" element={<ClientBugsPage />} />

@@ -1,55 +1,79 @@
 import { useMemo, useState } from 'react';
 import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import { formatHoursShort } from '../../utils/dateUtils';
+import { fetchGHResolvedPRs } from '../../services/githubService';
+import { FilterBar } from '../common/FilterBar';
 
-// Each column declares how to extract its sortable value
-const COLUMNS = [
-  { key: 'number', label: 'PR #', get: (p) => p.number },
-  { key: 'author', label: 'Author', get: (p) => p.author },
-  { key: 'repo', label: 'Repo', get: (p) => p.repo },
-  { key: 'createdAt', label: 'Created Date', get: (p) => new Date(p.createdAt).getTime() },
-  { key: 'elapsedHours', label: 'Open For', get: (p) => p.elapsedHours },
-  { key: 'sizeLines', label: 'Lines', get: (p) => p.sizeLines },
-  { key: 'phase', label: 'Phase', get: (p) => p.phase },
-  { key: 'status', label: 'Status', get: (p) => p.status },
+const LEGEND_ITEMS = [
+  { color: '#c0392b', label: 'Breaching' },
+  { color: '#d97706', label: 'Close' },
+  { color: '#2e7d5e', label: 'Compliant' },
 ];
 
-function formatDate(iso) {
-  if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
-}
+const FILTER_FIELDS = [
+  { key: 'repo', label: 'Repo' },
+  { key: 'branch', label: 'Branch' },
+  { key: 'author', label: 'Author' },
+  { key: 'status', label: 'Status' },
+  { key: 'phase', label: 'Phase' },
+];
+
+const INITIAL_FILTERS = { search: '', repo: [], branch: [], author: [], status: [], phase: [] };
+
+// Plain percentages (always sum to 100%) — table-fixed treats these as a
+// reliable, well-supported contract: every browser resolves a % <col> width
+// against the table's own width the same way, unlike clamp()/calc() on
+// <col>, which several engines silently ignore inside a fixed table layout
+// (falling back to sizing that column off its first-row content instead —
+// which is what was actually happening the last two rounds of tuning here,
+// despite the numbers changing in the source).
+//
+// PR title is the actual point of this table, so it gets the largest single
+// share (45%, well over 2x any other column) rather than splitting evenly —
+// Repo+Branch and Phase+Status are stacked into single columns (still fully
+// visible, just two lines instead of two), and Created/Resolved dates are
+// dropped entirely since Open For is what actually matters here.
+const BASE_COLUMNS = [
+  { key: 'number', label: 'PR #', get: (p) => p.number, width: '45%' },
+  { key: 'author', label: 'Author', get: (p) => p.author, width: '11%' },
+  {
+    key: 'repo',
+    label: 'Repo / Branch',
+    get: (p) => `${p.repo} ${p.branch || ''}`,
+    width: '15%',
+  },
+  {
+    key: 'elapsedHours',
+    label: 'Open For',
+    // Open PRs sort by hours-still-open (positive). Resolved PRs have no
+    // elapsedHours, so without a fallback they'd all tie at the same value
+    // and cluster in arbitrary (fetch) order — instead give them a negative
+    // "hours since resolved", so within the resolved cluster the most
+    // recently resolved sorts closest to the open PRs, oldest furthest away.
+    get: (p) => {
+      if (p.elapsedHours != null) return p.elapsedHours;
+      if (p.resolvedAt) return -(Date.now() - new Date(p.resolvedAt).getTime()) / 3_600_000;
+      return -Infinity;
+    },
+    width: '8%',
+  },
+  { key: 'sizeLines', label: 'Lines', get: (p) => p.sizeLines, width: '8%' },
+  { key: 'status', label: 'Status / Phase', get: (p) => p.status, width: '13%' },
+];
 
 function StatusPill({ status }) {
   const styles = {
     Breached: 'bg-[#fde8e8] text-[#c0392b]',
     'At Risk': 'bg-[#fef3e2] text-[#d97706]',
     'On Track': 'bg-[#e4f4ed] text-[#2e7d5e]',
+    Merged: 'bg-[#eef0fc] text-[#5c4fa3]',
+    Closed: 'bg-[#f0f2f5] text-[#6b7a99]',
   };
   return (
     <span
       className={`inline-block px-[9px] py-[2px] rounded-[20px] text-[11px] font-semibold whitespace-nowrap ${styles[status] || ''}`}
     >
       {status}
-    </span>
-  );
-}
-
-function PhasePill({ phase }) {
-  const styles = {
-    'Waiting 1st review': 'bg-[#f0f2f5] text-[#6b7a99]',
-    'Review in progress': 'bg-[#eef3fc] text-[#2d5a9e]',
-    Approved: 'bg-[#e4f4ed] text-[#2e7d5e]',
-    'Changes requested': 'bg-[#fef3e2] text-[#d97706]',
-  };
-  return (
-    <span
-      className={`inline-block px-[9px] py-[2px] rounded-[20px] text-[11px] font-semibold whitespace-nowrap ${styles[phase] || 'bg-[#f0f2f5] text-[#6b7a99]'}`}
-    >
-      {phase}
     </span>
   );
 }
@@ -72,26 +96,93 @@ function StatCard({ label, value, accent }) {
 }
 
 export function PROpenPrsTab({ openPrs }) {
-  // Default: newest PR first (latest created date at top), oldest at the bottom
-  const [sortKey, setSortKey] = useState('createdAt');
+  const [filters, setFilters] = useState(INITIAL_FILTERS);
+  const [showResolved, setShowResolved] = useState(false);
+  const [resolvedPrs, setResolvedPrs] = useState(null);
+  const [resolvedLoading, setResolvedLoading] = useState(false);
+  const [resolvedError, setResolvedError] = useState(null);
+  const [resolvedFailedRepos, setResolvedFailedRepos] = useState([]);
+
+  // Default: longest-open PR first, matching the backend's own default order
+  const [sortKey, setSortKey] = useState('elapsedHours');
   const [sortDir, setSortDir] = useState('desc');
 
+  // Fetches every time the checkbox is turned on (not gated on "already
+  // fetched once") — githubService's own 5-min client cache already avoids a
+  // real network hit on quick re-checks, but once that TTL passes this
+  // actually gets fresh data instead of showing whatever was fetched
+  // arbitrarily long ago for the rest of the page's lifetime.
+  function handleToggleResolved(e) {
+    const checked = e.target.checked;
+    setShowResolved(checked);
+    if (checked && !resolvedLoading) {
+      setResolvedLoading(true);
+      setResolvedError(null);
+      fetchGHResolvedPRs()
+        .then((data) => {
+          setResolvedPrs(data.resolvedPRs || []);
+          setResolvedFailedRepos(data.failedRepos || []);
+        })
+        .catch((err) => setResolvedError(err.message))
+        .finally(() => setResolvedLoading(false));
+    }
+  }
+
+  const allPrs = useMemo(() => {
+    const base = openPrs || [];
+    return showResolved && resolvedPrs ? [...base, ...resolvedPrs] : base;
+  }, [openPrs, showResolved, resolvedPrs]);
+
+  const fieldOptions = useMemo(
+    () => ({
+      repo: [...new Set(allPrs.map((p) => p.repo))].sort(),
+      branch: [...new Set(allPrs.map((p) => p.branch).filter(Boolean))].sort(),
+      author: [...new Set(allPrs.map((p) => p.author))].sort(),
+      status: [...new Set(allPrs.map((p) => p.status))].sort(),
+      phase: [...new Set(allPrs.map((p) => p.phase).filter(Boolean))].sort(),
+    }),
+    [allPrs]
+  );
+
+  function handleFilterChange(key, value) {
+    setFilters((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function clearFilters() {
+    setFilters(INITIAL_FILTERS);
+  }
+
+  const filteredPrs = useMemo(() => {
+    const { search, repo, branch, author, status, phase } = filters;
+    return allPrs.filter((p) => {
+      if (search) {
+        const q = search.toLowerCase();
+        if (!`${p.number}`.includes(q) && !p.title.toLowerCase().includes(q)) return false;
+      }
+      if (repo.length && !repo.includes(p.repo)) return false;
+      if (branch.length && !branch.includes(p.branch)) return false;
+      if (author.length && !author.includes(p.author)) return false;
+      if (status.length && !status.includes(p.status)) return false;
+      if (phase.length && !phase.includes(p.phase)) return false;
+      return true;
+    });
+  }, [allPrs, filters]);
+
   const stats = useMemo(() => {
-    if (!openPrs?.length) return { total: 0, breached: 0, atRisk: 0, onTrack: 0 };
+    const openOnly = filteredPrs.filter((p) => p.state === 'OPEN');
     return {
-      total: openPrs.length,
-      breached: openPrs.filter((p) => p.status === 'Breached').length,
-      atRisk: openPrs.filter((p) => p.status === 'At Risk').length,
-      onTrack: openPrs.filter((p) => p.status === 'On Track').length,
+      total: openOnly.length,
+      breached: openOnly.filter((p) => p.status === 'Breached').length,
+      atRisk: openOnly.filter((p) => p.status === 'At Risk').length,
+      onTrack: openOnly.filter((p) => p.status === 'On Track').length,
     };
-  }, [openPrs]);
+  }, [filteredPrs]);
 
   const sortedPrs = useMemo(() => {
-    if (!openPrs?.length) return [];
-    const col = COLUMNS.find((c) => c.key === sortKey);
-    if (!col) return openPrs;
+    const col = BASE_COLUMNS.find((c) => c.key === sortKey);
+    if (!col) return filteredPrs;
     const dir = sortDir === 'asc' ? 1 : -1;
-    return [...openPrs].sort((a, b) => {
+    return [...filteredPrs].sort((a, b) => {
       const av = col.get(a);
       const bv = col.get(b);
       if (typeof av === 'string' || typeof bv === 'string') {
@@ -99,7 +190,7 @@ export function PROpenPrsTab({ openPrs }) {
       }
       return (av - bv) * dir;
     });
-  }, [openPrs, sortKey, sortDir]);
+  }, [filteredPrs, sortKey, sortDir]);
 
   function handleSort(key) {
     if (key === sortKey) {
@@ -116,6 +207,41 @@ export function PROpenPrsTab({ openPrs }) {
 
   return (
     <div className="flex flex-col gap-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <FilterBar
+          fields={FILTER_FIELDS}
+          fieldOptions={fieldOptions}
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          onClear={clearFilters}
+          searchable
+          searchPlaceholder="Search PR # or title..."
+        />
+
+        <div className="flex gap-4">
+          {LEGEND_ITEMS.map((item) => (
+            <div key={item.label} className="flex items-center gap-1.5 text-[12px] text-[#6b7a99]">
+              <span className="inline-block w-3 h-3 rounded-[2px]" style={{ backgroundColor: item.color }} />
+              {item.label}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3">
+        <label className="flex items-center gap-1.5 text-[13px] text-[#4a5568] cursor-pointer select-none">
+          <input type="checkbox" checked={showResolved} onChange={handleToggleResolved} />
+          Show merged/closed (last 30 days)
+        </label>
+        {resolvedLoading && <span className="text-[12px] text-[#8896b0]">Loading…</span>}
+        {resolvedError && <span className="text-[12px] text-[#c0392b]">{resolvedError}</span>}
+        {!resolvedError && resolvedFailedRepos.length > 0 && (
+          <span className="text-[12px] text-[#c0392b]">
+            Couldn't load merged/closed PRs for: {resolvedFailedRepos.join(', ')}
+          </span>
+        )}
+      </div>
+
       <div className="flex flex-wrap gap-3">
         <StatCard label="Total Open" value={stats.total} accent="blue" />
         <StatCard label="Breached (>24h)" value={stats.breached} accent="rose" />
@@ -123,21 +249,26 @@ export function PROpenPrsTab({ openPrs }) {
         <StatCard label="On Track" value={stats.onTrack} accent="teal" />
       </div>
 
-      {openPrs.length === 0 ? (
-        <div className="text-[#8896b0] text-sm py-6 text-center">No open PRs.</div>
+      {sortedPrs.length === 0 ? (
+        <div className="text-[#8896b0] text-sm py-6 text-center">No PRs match the current filters.</div>
       ) : (
         <div className="border border-[#dde2ea] rounded-lg overflow-hidden">
-          <div className="max-h-[520px] overflow-auto">
-          <table className="w-full text-[13px]">
+          <div className="max-h-[520px] overflow-y-auto overflow-x-hidden" style={{ scrollbarGutter: 'stable' }}>
+          <table className="w-full table-fixed text-[12px]">
+            <colgroup>
+              {BASE_COLUMNS.map((col) => (
+                <col key={col.key} style={{ width: col.width }} />
+              ))}
+            </colgroup>
             <thead className="sticky top-0 z-10 bg-[#f5f7fa]">
               <tr className="bg-[#f5f7fa] border-b border-[#dde2ea]">
-                {COLUMNS.map((col) => {
+                {BASE_COLUMNS.map((col) => {
                   const active = sortKey === col.key;
                   return (
                     <th
                       key={col.key}
                       onClick={() => handleSort(col.key)}
-                      className="text-left px-4 py-2.5 font-semibold text-[#6b7a99] text-[11px] uppercase tracking-[.4px] cursor-pointer select-none hover:text-[#3b6cb7]"
+                      className="text-left px-3 py-2 font-semibold text-[#6b7a99] text-[11px] uppercase tracking-[.4px] cursor-pointer select-none hover:text-[#3b6cb7] truncate"
                     >
                       <span className="inline-flex items-center gap-1">
                         {col.label}
@@ -164,32 +295,32 @@ export function PROpenPrsTab({ openPrs }) {
                     i % 2 === 0 ? '' : 'bg-[#fafbfc]'
                   }`}
                 >
-                  <td className="px-4 py-2.5 text-[#1a2332] max-w-[280px]">
+                  <td className="px-3 py-2 text-[#1a2332] truncate" title={`#${pr.number} - ${pr.title}`}>
                     <a
                       href={pr.url}
                       target="_blank"
                       rel="noreferrer"
-                      className="hover:text-[#3b6cb7] hover:underline truncate block"
+                      className="hover:text-[#3b6cb7] hover:underline"
                     >
                       #{pr.number} - {pr.title}
                     </a>
                   </td>
-                  <td className="px-4 py-2.5 text-[#6b7a99] whitespace-nowrap">{pr.author}</td>
-                  <td className="px-4 py-2.5 text-[#6b7a99] whitespace-nowrap">{pr.repo}</td>
-                  <td className="px-4 py-2.5 text-[#6b7a99] whitespace-nowrap">{formatDate(pr.createdAt)}</td>
-                  <td className="px-4 py-2.5 text-[#1a2332] whitespace-nowrap font-medium">
-                    {formatHoursShort(pr.elapsedHours)}
+                  <td className="px-3 py-2 text-[#6b7a99] truncate" title={pr.author}>{pr.author}</td>
+                  <td className="px-3 py-2 overflow-hidden" title={`${pr.repo}${pr.branch ? ' / ' + pr.branch : ''}`}>
+                    <div className="text-[#6b7a99] truncate">{pr.repo}</div>
+                    {pr.branch && <div className="text-[10px] text-[#8896b0] truncate">{pr.branch}</div>}
                   </td>
-                  <td className="px-4 py-2.5 text-[#6b7a99] whitespace-nowrap">
+                  <td className="px-3 py-2 text-[#1a2332] truncate font-medium">
+                    {pr.elapsedHours != null ? formatHoursShort(pr.elapsedHours) : '—'}
+                  </td>
+                  <td className="px-3 py-2 text-[#6b7a99] truncate">
                     <span className="text-[#2e7d5e]">+{pr.additions}</span>
                     {' '}
                     <span className="text-[#c0392b]">-{pr.deletions}</span>
                   </td>
-                  <td className="px-4 py-2.5 whitespace-nowrap">
-                    <PhasePill phase={pr.phase} />
-                  </td>
-                  <td className="px-4 py-2.5 whitespace-nowrap">
+                  <td className="px-3 py-2 overflow-hidden">
                     <StatusPill status={pr.status} />
+                    <div className="text-[10px] text-[#8896b0] truncate mt-0.5">{pr.phase}</div>
                   </td>
                 </tr>
               ))}
