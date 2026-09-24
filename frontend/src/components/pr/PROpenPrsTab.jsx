@@ -9,28 +9,35 @@ const LEGEND_ITEMS = [
   { color: '#2e7d5e', label: 'Compliant' },
 ];
 
-// Each column declares how to extract its sortable value, plus a width sized
-// to what it actually holds (usernames, repo names, "Changes requested"…) so
-// the table never needs horizontal scroll without every column truncating.
-// PR is the only column with no fixed width — table-fixed hands it whatever
-// space is left over, and its content is expected to truncate (it always
-// has, long before this table grew more columns) since it has a tooltip.
+// Each column's width is a clamp(min, preferred%, max) — it scales with the
+// window/container width like a percentage would (filling extra room on a
+// wide monitor), but never shrinks below the min it actually needs (a
+// username, "Changes requested", …) or grows past a sensible max. Pure CSS,
+// no resize listeners needed. PR is the only column with no fixed width —
+// table-fixed hands it whatever space is left over, and its content is
+// expected to truncate (it always has, long before this table grew more
+// columns) since it has a tooltip.
 const COLUMNS = [
   { key: 'number', label: 'PR #', get: (p) => p.number },
-  { key: 'author', label: 'Author', get: (p) => p.author, width: '120px' },
-  { key: 'repo', label: 'Repo', get: (p) => p.repo, width: '150px' },
-  { key: 'branch', label: 'Branch', get: (p) => p.branch || '', width: '100px' },
-  { key: 'createdAt', label: 'Created Date', get: (p) => new Date(p.createdAt).getTime(), width: '95px' },
-  { key: 'elapsedHours', label: 'Open For', get: (p) => p.elapsedHours ?? -1, width: '70px' },
+  { key: 'author', label: 'Author', get: (p) => p.author, width: 'clamp(100px, 8%, 160px)' },
+  { key: 'repo', label: 'Repo', get: (p) => p.repo, width: 'clamp(120px, 10%, 200px)' },
+  { key: 'branch', label: 'Branch', get: (p) => p.branch || '', width: 'clamp(90px, 7%, 130px)' },
+  {
+    key: 'createdAt',
+    label: 'Created Date',
+    get: (p) => new Date(p.createdAt).getTime(),
+    width: 'clamp(85px, 7%, 115px)',
+  },
+  { key: 'elapsedHours', label: 'Open For', get: (p) => p.elapsedHours ?? -1, width: 'clamp(60px, 5%, 85px)' },
   {
     key: 'resolvedAt',
     label: 'Resolved',
     get: (p) => (p.resolvedAt ? new Date(p.resolvedAt).getTime() : 0),
-    width: '90px',
+    width: 'clamp(80px, 6%, 110px)',
   },
-  { key: 'sizeLines', label: 'Lines', get: (p) => p.sizeLines, width: '90px' },
-  { key: 'phase', label: 'Phase', get: (p) => p.phase, width: '140px' },
-  { key: 'status', label: 'Status', get: (p) => p.status, width: '85px' },
+  { key: 'sizeLines', label: 'Lines', get: (p) => p.sizeLines, width: 'clamp(75px, 6%, 110px)' },
+  { key: 'phase', label: 'Phase', get: (p) => p.phase, width: 'clamp(120px, 10%, 170px)' },
+  { key: 'status', label: 'Status', get: (p) => p.status, width: 'clamp(75px, 6%, 100px)' },
 ];
 
 function formatDate(iso) {
@@ -263,7 +270,7 @@ export function PROpenPrsTab({ openPrs }) {
         <div className="text-[#8896b0] text-sm py-6 text-center">No PRs match the current filters.</div>
       ) : (
         <div className="border border-[#dde2ea] rounded-lg overflow-hidden">
-          <div className="max-h-[520px] overflow-y-auto overflow-x-hidden">
+          <div className="max-h-[520px] overflow-y-auto overflow-x-hidden" style={{ scrollbarGutter: 'stable' }}>
           <table className="w-full table-fixed text-[12px]">
             <colgroup>
               {COLUMNS.map((col) => (
