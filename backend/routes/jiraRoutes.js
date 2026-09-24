@@ -1,10 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const { requireAuth } = require('../middleware/auth');
-const { getBugs, getRegressions, getWorkspaceNames } = require('../controllers/jiraController');
+const { getBugs, getWorkspaceNames } = require('../controllers/jiraController');
 
 router.get('/bugs', requireAuth, getBugs);
-router.get('/regressions', requireAuth, getRegressions);
 router.get('/workspaces', requireAuth, getWorkspaceNames);
 
 module.exports = router;

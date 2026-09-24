@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
-import { fetchBugs, fetchRegressions } from '../services/jiraService';
+import { fetchBugs } from '../services/jiraService';
 
 export function useJiraData() {
   const [bugs, setBugs] = useState([]);
-  const [regressions, setRegressions] = useState([]);
   const [fetchedAt, setFetchedAt] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -15,13 +14,9 @@ export function useJiraData() {
       setLoading(true);
       setError(null);
       try {
-        const [bugsRes, regRes] = await Promise.all([
-          fetchBugs(),
-          fetchRegressions(),
-        ]);
+        const bugsRes = await fetchBugs();
         if (!cancelled) {
           setBugs(bugsRes.issues);
-          setRegressions(regRes.issues);
           setFetchedAt(bugsRes.fetchedAt);
         }
       } catch (err) {
@@ -37,5 +32,5 @@ export function useJiraData() {
     };
   }, []);
 
-  return { bugs, regressions, fetchedAt, loading, error };
+  return { bugs, fetchedAt, loading, error };
 }

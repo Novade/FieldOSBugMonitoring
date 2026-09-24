@@ -1,38 +1,34 @@
 import { useState, useEffect, useContext } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useJiraData } from '../hooks/useJiraData';
-import { TabBar } from '../components/layout/TabBar';
 import { Banner } from '../components/common/Banner';
 import { BugsDashboard } from '../components/dashboard/BugsDashboard';
-import { RegressionDashboard } from '../components/dashboard/RegressionDashboard';
 import { BacklogTable } from '../components/backlog/BacklogTable';
 import { SyncTimeContext } from '../components/layout/MainLayout';
 
+const SECTIONS = [
+  { id: 'dashboard', label: 'Dashboard' },
+  { id: 'backlog', label: 'Backlog' },
+];
+
 const PATH_TO_TAB = {
-  '/bugs/dashboard': 'bugs-dashboard',
-  '/bugs/backlog': 'bugs-backlog',
-  '/regression/dashboard': 'reg-dashboard',
-  '/regression/backlog': 'reg-backlog',
+  '/bugs/dashboard': 'dashboard',
+  '/bugs/backlog': 'backlog',
 };
 
 const TAB_TO_PATH = {
-  'bugs-dashboard': '/bugs/dashboard',
-  'bugs-backlog': '/bugs/backlog',
-  'reg-dashboard': '/regression/dashboard',
-  'reg-backlog': '/regression/backlog',
+  dashboard: '/bugs/dashboard',
+  backlog: '/bugs/backlog',
 };
 
 export function AllBugsPage() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const activeTab =
-    PATH_TO_TAB[pathname] ??
-    (pathname.startsWith('/regression') ? 'reg-dashboard' : 'bugs-dashboard');
+  const activeTab = PATH_TO_TAB[pathname] ?? 'dashboard';
   const setSyncTime = useContext(SyncTimeContext);
 
-  const { bugs, regressions, fetchedAt, loading, error } = useJiraData();
+  const { bugs, fetchedAt, loading, error } = useJiraData();
   const [bugDrill, setBugDrill] = useState(null);
-  const [regDrill, setRegDrill] = useState(null);
 
   useEffect(() => {
     if (fetchedAt && setSyncTime) setSyncTime(fetchedAt);
@@ -40,18 +36,12 @@ export function AllBugsPage() {
 
   function handleTabChange(tabId) {
     setBugDrill(null);
-    setRegDrill(null);
     navigate(TAB_TO_PATH[tabId]);
   }
 
   function handleBugDrillTo(key, val, label) {
     setBugDrill({ key, val, label });
-    navigate(TAB_TO_PATH['bugs-backlog']);
-  }
-
-  function handleRegDrillTo(key, val, label) {
-    setRegDrill({ key, val, label });
-    navigate(TAB_TO_PATH['reg-backlog']);
+    navigate(TAB_TO_PATH.backlog);
   }
 
   if (loading) {
@@ -66,34 +56,31 @@ export function AllBugsPage() {
   }
 
   return (
-    <div className="max-w-[1380px] mx-auto">
+    <div className="max-w-[1380px] mx-auto px-7 py-6">
       <Banner message={error} visible={!!error} />
-      <TabBar activeTab={activeTab} onTabChange={handleTabChange} />
-      <div className="px-7 py-6">
-        {activeTab === 'bugs-dashboard' && (
-          <BugsDashboard issues={bugs} onDrillTo={handleBugDrillTo} />
-        )}
-        {activeTab === 'bugs-backlog' && (
-          <BacklogTable
-            issues={bugs}
-            drill={bugDrill}
-            onClearDrill={() => setBugDrill(null)}
-          />
-        )}
-        {activeTab === 'reg-dashboard' && (
-          <RegressionDashboard
-            issues={regressions}
-            onDrillTo={handleRegDrillTo}
-          />
-        )}
-        {activeTab === 'reg-backlog' && (
-          <BacklogTable
-            issues={regressions}
-            drill={regDrill}
-            onClearDrill={() => setRegDrill(null)}
-          />
-        )}
+
+      <div className="flex gap-1.5 mb-5">
+        {SECTIONS.map((section) => {
+          const isActive = activeTab === section.id;
+          return (
+            <button
+              key={section.id}
+              type="button"
+              onClick={() => handleTabChange(section.id)}
+              className={`px-4 py-2 rounded-md text-[14px] font-medium transition-colors ${
+                isActive ? 'bg-[#e2e5ea] text-[#1a2332]' : 'text-[#6b7a99] hover:bg-[#f0f2f5]'
+              }`}
+            >
+              {section.label}
+            </button>
+          );
+        })}
       </div>
+
+      {activeTab === 'dashboard' && <BugsDashboard issues={bugs} onDrillTo={handleBugDrillTo} />}
+      {activeTab === 'backlog' && (
+        <BacklogTable issues={bugs} drill={bugDrill} onClearDrill={() => setBugDrill(null)} />
+      )}
     </div>
   );
 }

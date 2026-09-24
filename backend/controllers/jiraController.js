@@ -74,16 +74,6 @@ async function getBugs(req, res, next) {
   }
 }
 
-async function getRegressions(req, res, next) {
-  try {
-    const issues = await fetchAllIssues(jiraConfig.REGRESSIONS_JQL);
-    console.log(`[jira] Fetched ${issues.length} regression bugs`);
-    res.json({ issues, fetchedAt: new Date().toISOString() });
-  } catch (err) {
-    next(err);
-  }
-}
-
 async function getWorkspaceNames(req, res, next) {
   try {
     const seen = new Set();
@@ -118,4 +108,4 @@ async function getWorkspaceNames(req, res, next) {
   }
 }
 
-module.exports = { getBugs, getRegressions, getWorkspaceNames };
+module.exports = { getBugs, getWorkspaceNames };

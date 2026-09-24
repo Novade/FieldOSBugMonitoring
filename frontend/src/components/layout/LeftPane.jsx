@@ -6,7 +6,7 @@ const NAV_ITEMS = [
     label: 'All Bugs',
     icon: Bug,
     path: '/bugs/dashboard',
-    matchPrefixes: ['/bugs', '/regression'],
+    matchPrefixes: ['/bugs'],
   },
   {
     label: 'Workspace (Global)',

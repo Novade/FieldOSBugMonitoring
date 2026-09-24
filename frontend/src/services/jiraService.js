@@ -43,17 +43,6 @@ export function fetchBugs() {
   });
 }
 
-export function fetchRegressions() {
-  return withCache('regressions', async () => {
-    try {
-      const res = await api.get('/api/jira/regressions');
-      return res.data;
-    } catch (err) {
-      throw new Error(extractError(err));
-    }
-  });
-}
-
 export function fetchWorkspaces() {
   return withCache('workspaces', async () => {
     try {
