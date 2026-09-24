@@ -11,17 +11,24 @@ const LEGEND_ITEMS = [
 
 // Each column's width is a clamp(min, preferred%, max) — it scales with the
 // window/container width like a percentage would (filling extra room on a
-// wide monitor), but never shrinks below the min it actually needs (a
-// username, "Changes requested", …) or grows past a sensible max. Pure CSS,
-// no resize listeners needed. PR is the only column with no fixed width —
-// table-fixed hands it whatever space is left over, and its content is
-// expected to truncate (it always has, long before this table grew more
-// columns) since it has a tooltip.
-const COLUMNS = [
+// wide monitor), but never shrinks below the min it actually needs or grows
+// past a sensible max. Pure CSS, no resize listeners needed.
+//
+// PR title is the actual point of this table, so it needs real room rather
+// than splitting it 10 ways — Repo+Branch and Phase+Status are stacked into
+// single columns (still fully visible, just two lines instead of two
+// columns), and Resolved only shows up once there's something to show. PR
+// itself has no fixed width: table-fixed hands it whatever's left over, and
+// its content still truncates with a tooltip if a title is genuinely long.
+const BASE_COLUMNS = [
   { key: 'number', label: 'PR #', get: (p) => p.number },
   { key: 'author', label: 'Author', get: (p) => p.author, width: 'clamp(100px, 8%, 160px)' },
-  { key: 'repo', label: 'Repo', get: (p) => p.repo, width: 'clamp(120px, 10%, 200px)' },
-  { key: 'branch', label: 'Branch', get: (p) => p.branch || '', width: 'clamp(90px, 7%, 130px)' },
+  {
+    key: 'repo',
+    label: 'Repo / Branch',
+    get: (p) => `${p.repo} ${p.branch || ''}`,
+    width: 'clamp(150px, 12%, 230px)',
+  },
   {
     key: 'createdAt',
     label: 'Created Date',
@@ -34,10 +41,10 @@ const COLUMNS = [
     label: 'Resolved',
     get: (p) => (p.resolvedAt ? new Date(p.resolvedAt).getTime() : 0),
     width: 'clamp(80px, 6%, 110px)',
+    onlyWhenResolvedShown: true,
   },
   { key: 'sizeLines', label: 'Lines', get: (p) => p.sizeLines, width: 'clamp(75px, 6%, 110px)' },
-  { key: 'phase', label: 'Phase', get: (p) => p.phase, width: 'clamp(120px, 10%, 170px)' },
-  { key: 'status', label: 'Status', get: (p) => p.status, width: 'clamp(75px, 6%, 100px)' },
+  { key: 'status', label: 'Status / Phase', get: (p) => p.status, width: 'clamp(120px, 9%, 170px)' },
 ];
 
 function formatDate(iso) {
@@ -62,22 +69,6 @@ function StatusPill({ status }) {
       className={`inline-block px-[9px] py-[2px] rounded-[20px] text-[11px] font-semibold whitespace-nowrap ${styles[status] || ''}`}
     >
       {status}
-    </span>
-  );
-}
-
-function PhasePill({ phase }) {
-  const styles = {
-    'Waiting 1st review': 'bg-[#f0f2f5] text-[#6b7a99]',
-    'Review in progress': 'bg-[#eef3fc] text-[#2d5a9e]',
-    Approved: 'bg-[#e4f4ed] text-[#2e7d5e]',
-    'Changes requested': 'bg-[#fef3e2] text-[#d97706]',
-  };
-  return (
-    <span
-      className={`inline-block px-[9px] py-[2px] rounded-[20px] text-[11px] font-semibold whitespace-nowrap ${styles[phase] || 'bg-[#f0f2f5] text-[#6b7a99]'}`}
-    >
-      {phase}
     </span>
   );
 }
@@ -168,8 +159,13 @@ export function PROpenPrsTab({ openPrs }) {
     };
   }, [filteredPrs]);
 
+  const columns = useMemo(
+    () => BASE_COLUMNS.filter((c) => showResolved || !c.onlyWhenResolvedShown),
+    [showResolved]
+  );
+
   const sortedPrs = useMemo(() => {
-    const col = COLUMNS.find((c) => c.key === sortKey);
+    const col = columns.find((c) => c.key === sortKey);
     if (!col) return filteredPrs;
     const dir = sortDir === 'asc' ? 1 : -1;
     return [...filteredPrs].sort((a, b) => {
@@ -180,7 +176,7 @@ export function PROpenPrsTab({ openPrs }) {
       }
       return (av - bv) * dir;
     });
-  }, [filteredPrs, sortKey, sortDir]);
+  }, [filteredPrs, columns, sortKey, sortDir]);
 
   const filtersActive = selectedRepo !== 'all' || selectedBranch !== 'all';
 
@@ -273,13 +269,13 @@ export function PROpenPrsTab({ openPrs }) {
           <div className="max-h-[520px] overflow-y-auto overflow-x-hidden" style={{ scrollbarGutter: 'stable' }}>
           <table className="w-full table-fixed text-[12px]">
             <colgroup>
-              {COLUMNS.map((col) => (
+              {columns.map((col) => (
                 <col key={col.key} style={{ width: col.width }} />
               ))}
             </colgroup>
             <thead className="sticky top-0 z-10 bg-[#f5f7fa]">
               <tr className="bg-[#f5f7fa] border-b border-[#dde2ea]">
-                {COLUMNS.map((col) => {
+                {columns.map((col) => {
                   const active = sortKey === col.key;
                   return (
                     <th
@@ -323,23 +319,25 @@ export function PROpenPrsTab({ openPrs }) {
                     </a>
                   </td>
                   <td className="px-3 py-2 text-[#6b7a99] truncate" title={pr.author}>{pr.author}</td>
-                  <td className="px-3 py-2 text-[#6b7a99] truncate" title={pr.repo}>{pr.repo}</td>
-                  <td className="px-3 py-2 text-[#6b7a99] truncate" title={pr.branch || ''}>{pr.branch || '—'}</td>
+                  <td className="px-3 py-2 overflow-hidden" title={`${pr.repo}${pr.branch ? ' / ' + pr.branch : ''}`}>
+                    <div className="text-[#6b7a99] truncate">{pr.repo}</div>
+                    {pr.branch && <div className="text-[10px] text-[#8896b0] truncate">{pr.branch}</div>}
+                  </td>
                   <td className="px-3 py-2 text-[#6b7a99] truncate">{formatDate(pr.createdAt)}</td>
                   <td className="px-3 py-2 text-[#1a2332] truncate font-medium">
                     {pr.elapsedHours != null ? formatHoursShort(pr.elapsedHours) : '—'}
                   </td>
-                  <td className="px-3 py-2 text-[#6b7a99] truncate">{formatDate(pr.resolvedAt)}</td>
+                  {showResolved && (
+                    <td className="px-3 py-2 text-[#6b7a99] truncate">{formatDate(pr.resolvedAt)}</td>
+                  )}
                   <td className="px-3 py-2 text-[#6b7a99] truncate">
                     <span className="text-[#2e7d5e]">+{pr.additions}</span>
                     {' '}
                     <span className="text-[#c0392b]">-{pr.deletions}</span>
                   </td>
                   <td className="px-3 py-2 overflow-hidden">
-                    <PhasePill phase={pr.phase} />
-                  </td>
-                  <td className="px-3 py-2 overflow-hidden">
                     <StatusPill status={pr.status} />
+                    <div className="text-[10px] text-[#8896b0] truncate mt-0.5">{pr.phase}</div>
                   </td>
                 </tr>
               ))}
