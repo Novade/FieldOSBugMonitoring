@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
+import { ChevronUp, ChevronDown, ChevronsUpDown, X } from 'lucide-react';
 import { formatHoursShort } from '../../utils/dateUtils';
 import { fetchGHResolvedPRs } from '../../services/githubService';
 
@@ -9,18 +9,25 @@ const LEGEND_ITEMS = [
   { color: '#2e7d5e', label: 'Compliant' },
 ];
 
-// Each column declares how to extract its sortable value
+// Each column declares how to extract its sortable value, plus a fixed
+// width (columns sum to 100%) so the table never needs horizontal scroll —
+// long content (e.g. a branch name) truncates with an ellipsis instead.
 const COLUMNS = [
-  { key: 'number', label: 'PR #', get: (p) => p.number },
-  { key: 'author', label: 'Author', get: (p) => p.author },
-  { key: 'repo', label: 'Repo', get: (p) => p.repo },
-  { key: 'branch', label: 'Branch', get: (p) => p.branch || '' },
-  { key: 'createdAt', label: 'Created Date', get: (p) => new Date(p.createdAt).getTime() },
-  { key: 'elapsedHours', label: 'Open For', get: (p) => p.elapsedHours ?? -1 },
-  { key: 'resolvedAt', label: 'Resolved', get: (p) => (p.resolvedAt ? new Date(p.resolvedAt).getTime() : 0) },
-  { key: 'sizeLines', label: 'Lines', get: (p) => p.sizeLines },
-  { key: 'phase', label: 'Phase', get: (p) => p.phase },
-  { key: 'status', label: 'Status', get: (p) => p.status },
+  { key: 'number', label: 'PR #', get: (p) => p.number, width: '20%' },
+  { key: 'author', label: 'Author', get: (p) => p.author, width: '9%' },
+  { key: 'repo', label: 'Repo', get: (p) => p.repo, width: '10%' },
+  { key: 'branch', label: 'Branch', get: (p) => p.branch || '', width: '9%' },
+  { key: 'createdAt', label: 'Created Date', get: (p) => new Date(p.createdAt).getTime(), width: '9%' },
+  { key: 'elapsedHours', label: 'Open For', get: (p) => p.elapsedHours ?? -1, width: '7%' },
+  {
+    key: 'resolvedAt',
+    label: 'Resolved',
+    get: (p) => (p.resolvedAt ? new Date(p.resolvedAt).getTime() : 0),
+    width: '8%',
+  },
+  { key: 'sizeLines', label: 'Lines', get: (p) => p.sizeLines, width: '8%' },
+  { key: 'phase', label: 'Phase', get: (p) => p.phase, width: '11%' },
+  { key: 'status', label: 'Status', get: (p) => p.status, width: '9%' },
 ];
 
 function formatDate(iso) {
@@ -165,6 +172,13 @@ export function PROpenPrsTab({ openPrs }) {
     });
   }, [filteredPrs, sortKey, sortDir]);
 
+  const filtersActive = selectedRepo !== 'all' || selectedBranch !== 'all';
+
+  function clearFilters() {
+    setSelectedRepo('all');
+    setSelectedBranch('all');
+  }
+
   function handleSort(key) {
     if (key === sortKey) {
       setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
@@ -206,6 +220,17 @@ export function PROpenPrsTab({ openPrs }) {
               </option>
             ))}
           </select>
+          <button
+            type="button"
+            onClick={clearFilters}
+            disabled={!filtersActive}
+            className={`flex items-center gap-1 text-[13px] px-2 py-1 rounded-md ${
+              filtersActive ? 'text-[#3b6cb7] hover:bg-[#eef3fc] cursor-pointer' : 'text-[#c2cbda] cursor-not-allowed'
+            }`}
+          >
+            <X size={13} />
+            Clear filters
+          </button>
           <label className="flex items-center gap-1.5 text-[13px] text-[#4a5568] cursor-pointer select-none">
             <input type="checkbox" checked={showResolved} onChange={handleToggleResolved} />
             Show merged/closed (last 30 days)
@@ -235,8 +260,13 @@ export function PROpenPrsTab({ openPrs }) {
         <div className="text-[#8896b0] text-sm py-6 text-center">No PRs match the current filters.</div>
       ) : (
         <div className="border border-[#dde2ea] rounded-lg overflow-hidden">
-          <div className="max-h-[520px] overflow-auto">
-          <table className="w-full text-[13px]">
+          <div className="max-h-[520px] overflow-y-auto overflow-x-hidden">
+          <table className="w-full table-fixed text-[13px]">
+            <colgroup>
+              {COLUMNS.map((col) => (
+                <col key={col.key} style={{ width: col.width }} />
+              ))}
+            </colgroup>
             <thead className="sticky top-0 z-10 bg-[#f5f7fa]">
               <tr className="bg-[#f5f7fa] border-b border-[#dde2ea]">
                 {COLUMNS.map((col) => {
@@ -245,7 +275,7 @@ export function PROpenPrsTab({ openPrs }) {
                     <th
                       key={col.key}
                       onClick={() => handleSort(col.key)}
-                      className="text-left px-4 py-2.5 font-semibold text-[#6b7a99] text-[11px] uppercase tracking-[.4px] cursor-pointer select-none hover:text-[#3b6cb7]"
+                      className="text-left px-4 py-2.5 font-semibold text-[#6b7a99] text-[11px] uppercase tracking-[.4px] cursor-pointer select-none hover:text-[#3b6cb7] truncate"
                     >
                       <span className="inline-flex items-center gap-1">
                         {col.label}
@@ -272,33 +302,33 @@ export function PROpenPrsTab({ openPrs }) {
                     i % 2 === 0 ? '' : 'bg-[#fafbfc]'
                   }`}
                 >
-                  <td className="px-4 py-2.5 text-[#1a2332] max-w-[280px]">
+                  <td className="px-4 py-2.5 text-[#1a2332] truncate" title={`#${pr.number} - ${pr.title}`}>
                     <a
                       href={pr.url}
                       target="_blank"
                       rel="noreferrer"
-                      className="hover:text-[#3b6cb7] hover:underline truncate block"
+                      className="hover:text-[#3b6cb7] hover:underline"
                     >
                       #{pr.number} - {pr.title}
                     </a>
                   </td>
-                  <td className="px-4 py-2.5 text-[#6b7a99] whitespace-nowrap">{pr.author}</td>
-                  <td className="px-4 py-2.5 text-[#6b7a99] whitespace-nowrap">{pr.repo}</td>
-                  <td className="px-4 py-2.5 text-[#6b7a99] whitespace-nowrap">{pr.branch || '—'}</td>
-                  <td className="px-4 py-2.5 text-[#6b7a99] whitespace-nowrap">{formatDate(pr.createdAt)}</td>
-                  <td className="px-4 py-2.5 text-[#1a2332] whitespace-nowrap font-medium">
+                  <td className="px-4 py-2.5 text-[#6b7a99] truncate" title={pr.author}>{pr.author}</td>
+                  <td className="px-4 py-2.5 text-[#6b7a99] truncate" title={pr.repo}>{pr.repo}</td>
+                  <td className="px-4 py-2.5 text-[#6b7a99] truncate" title={pr.branch || ''}>{pr.branch || '—'}</td>
+                  <td className="px-4 py-2.5 text-[#6b7a99] truncate">{formatDate(pr.createdAt)}</td>
+                  <td className="px-4 py-2.5 text-[#1a2332] truncate font-medium">
                     {pr.elapsedHours != null ? formatHoursShort(pr.elapsedHours) : '—'}
                   </td>
-                  <td className="px-4 py-2.5 text-[#6b7a99] whitespace-nowrap">{formatDate(pr.resolvedAt)}</td>
-                  <td className="px-4 py-2.5 text-[#6b7a99] whitespace-nowrap">
+                  <td className="px-4 py-2.5 text-[#6b7a99] truncate">{formatDate(pr.resolvedAt)}</td>
+                  <td className="px-4 py-2.5 text-[#6b7a99] truncate">
                     <span className="text-[#2e7d5e]">+{pr.additions}</span>
                     {' '}
                     <span className="text-[#c0392b]">-{pr.deletions}</span>
                   </td>
-                  <td className="px-4 py-2.5 whitespace-nowrap">
+                  <td className="px-4 py-2.5 overflow-hidden">
                     <PhasePill phase={pr.phase} />
                   </td>
-                  <td className="px-4 py-2.5 whitespace-nowrap">
+                  <td className="px-4 py-2.5 overflow-hidden">
                     <StatusPill status={pr.status} />
                   </td>
                 </tr>
