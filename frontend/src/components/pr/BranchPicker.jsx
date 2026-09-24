@@ -1,21 +1,62 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { GitBranch, ChevronDown, Search } from 'lucide-react';
+
+const POPOVER_WIDTH = 280;
+// Rough max height (search box + list) used only to decide whether to flip
+// the popover upward — doesn't need to be exact.
+const POPOVER_EST_HEIGHT = 340;
 
 export function BranchPicker({ branches, selected, onSelect, disabled = false }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
-  const containerRef = useRef(null);
+  const [pos, setPos] = useState(null);
+  const buttonRef = useRef(null);
+  const popoverRef = useRef(null);
   const inputRef = useRef(null);
+
+  // Popover renders in a portal (see below) so it isn't clipped by an
+  // ancestor's `overflow: hidden` (e.g. Card.jsx) — a plain absolutely
+  // positioned child would get cut off whenever this control sits near the
+  // bottom of its containing Card.
+  useLayoutEffect(() => {
+    if (!open || !buttonRef.current) return;
+    const rect = buttonRef.current.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    const openUp = spaceBelow < POPOVER_EST_HEIGHT && spaceAbove > spaceBelow;
+    setPos({
+      left: rect.left,
+      top: openUp ? undefined : rect.bottom + 4,
+      bottom: openUp ? window.innerHeight - rect.top + 4 : undefined,
+    });
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
     function handleClickOutside(e) {
-      if (containerRef.current && !containerRef.current.contains(e.target)) {
+      if (
+        buttonRef.current &&
+        !buttonRef.current.contains(e.target) &&
+        popoverRef.current &&
+        !popoverRef.current.contains(e.target)
+      ) {
         setOpen(false);
       }
     }
+    // Closing on scroll/resize is simpler and more robust than tracking the
+    // button's position live while a fixed-position popover is open.
+    function handleClose() {
+      setOpen(false);
+    }
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    window.addEventListener('scroll', handleClose, true);
+    window.addEventListener('resize', handleClose);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('scroll', handleClose, true);
+      window.removeEventListener('resize', handleClose);
+    };
   }, [open]);
 
   useEffect(() => {
@@ -42,8 +83,9 @@ export function BranchPicker({ branches, selected, onSelect, disabled = false })
   }
 
   return (
-    <div className="relative inline-block" ref={containerRef}>
+    <>
       <button
+        ref={buttonRef}
         type="button"
         disabled={disabled}
         title={disabled ? 'Please select a repo first' : undefined}
@@ -56,44 +98,52 @@ export function BranchPicker({ branches, selected, onSelect, disabled = false })
         {selected || 'Select branch'}
         <ChevronDown size={14} className="text-[#8896b0]" />
       </button>
-      {open && !disabled && (
-        <div className="absolute z-20 mt-1 w-[280px] bg-white border border-[#dde2ea] rounded-lg shadow-lg overflow-hidden">
-          <div className="p-2 border-b border-[#dde2ea]">
-            <div className="flex items-center gap-1.5 px-2 py-1.5 border border-[#dde2ea] rounded-md bg-[#f5f7fa]">
-              <Search size={13} className="text-[#8896b0]" />
-              <input
-                ref={inputRef}
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Find a branch…"
-                className="flex-1 bg-transparent outline-none text-[13px] text-[#1a2332]"
-              />
+      {open &&
+        !disabled &&
+        pos &&
+        createPortal(
+          <div
+            ref={popoverRef}
+            style={{ position: 'fixed', left: pos.left, top: pos.top, bottom: pos.bottom, width: POPOVER_WIDTH }}
+            className="z-50 bg-white border border-[#dde2ea] rounded-lg shadow-lg overflow-hidden"
+          >
+            <div className="p-2 border-b border-[#dde2ea]">
+              <div className="flex items-center gap-1.5 px-2 py-1.5 border border-[#dde2ea] rounded-md bg-[#f5f7fa]">
+                <Search size={13} className="text-[#8896b0]" />
+                <input
+                  ref={inputRef}
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Find a branch…"
+                  className="flex-1 bg-transparent outline-none text-[13px] text-[#1a2332]"
+                />
+              </div>
             </div>
-          </div>
-          <div className="max-h-[260px] overflow-auto">
-            {filtered.length === 0 ? (
-              <div className="px-3 py-4 text-[13px] text-[#8896b0] text-center">No branches found</div>
-            ) : (
-              filtered.map((b) => (
-                <button
-                  key={b}
-                  type="button"
-                  onClick={() => {
-                    onSelect(b);
-                    setOpen(false);
-                  }}
-                  className={`w-full text-left px-3 py-2 text-[13px] hover:bg-[#f5f7fa] ${
-                    b === selected ? 'bg-[#eef3fc] text-[#3b6cb7] font-medium' : 'text-[#1a2332]'
-                  }`}
-                >
-                  {b}
-                </button>
-              ))
-            )}
-          </div>
-        </div>
-      )}
-    </div>
+            <div className="max-h-[260px] overflow-auto">
+              {filtered.length === 0 ? (
+                <div className="px-3 py-4 text-[13px] text-[#8896b0] text-center">No branches found</div>
+              ) : (
+                filtered.map((b) => (
+                  <button
+                    key={b}
+                    type="button"
+                    onClick={() => {
+                      onSelect(b);
+                      setOpen(false);
+                    }}
+                    className={`w-full text-left px-3 py-2 text-[13px] hover:bg-[#f5f7fa] ${
+                      b === selected ? 'bg-[#eef3fc] text-[#3b6cb7] font-medium' : 'text-[#1a2332]'
+                    }`}
+                  >
+                    {b}
+                  </button>
+                ))
+              )}
+            </div>
+          </div>,
+          document.body
+        )}
+    </>
   );
 }

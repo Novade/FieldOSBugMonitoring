@@ -154,8 +154,12 @@ export function PRCyclePage() {
               </Fragment>
             ))}
           </div>
+        </>
+      )}
 
-          <div className="flex gap-4 justify-end mb-5">
+      {activeSection === 'monitoring' && (
+        <div className="flex flex-col gap-6">
+          <div className="flex gap-4 justify-end">
             {LEGEND_ITEMS.map((item) => (
               <div key={item.label} className="flex items-center gap-1.5 text-[12px] text-[#6b7a99]">
                 <span className="inline-block w-3 h-3 rounded-[2px]" style={{ backgroundColor: item.color }} />
@@ -163,11 +167,6 @@ export function PRCyclePage() {
               </div>
             ))}
           </div>
-        </>
-      )}
-
-      {activeSection === 'monitoring' && (
-        <div className="flex flex-col gap-6">
           <PROpenPrsTab openPrs={openPrs?.openPRs} />
           <Card
             accent="indigo"
