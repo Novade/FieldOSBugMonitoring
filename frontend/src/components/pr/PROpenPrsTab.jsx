@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
+import { ChevronUp, ChevronDown, ChevronsUpDown, Check, FileDiff, MessageSquare, Circle } from 'lucide-react';
 import { formatHoursShort } from '../../utils/dateUtils';
 import { fetchGHResolvedPRs } from '../../services/githubService';
 import { FilterBar } from '../common/FilterBar';
@@ -58,7 +58,7 @@ const BASE_COLUMNS = [
     width: '8%',
   },
   { key: 'sizeLines', label: 'Lines', get: (p) => p.sizeLines, width: '8%' },
-  { key: 'status', label: 'Status / Phase', get: (p) => p.status, width: '13%' },
+  { key: 'status', label: 'Status / Phase', get: (p) => p.status, width: '13%', align: 'center' },
 ];
 
 function StatusPill({ status }) {
@@ -75,6 +75,58 @@ function StatusPill({ status }) {
     >
       {status}
     </span>
+  );
+}
+
+// Phase sits under the SLA pill, so it's coloured text rather than a
+// second pill — readable, but visually secondary to the SLA status.
+function PhaseLabel({ phase }) {
+  const colors = {
+    Approved: '#2e7d5e',
+    'Changes requested': '#c2410c',
+    'Review in progress': '#2563eb',
+    'Waiting 1st review': '#6b7a99',
+  };
+  const color = colors[phase] || '#6b7a99';
+  return (
+    <div className="mt-1 text-[11px] font-medium truncate" style={{ color }}>
+      {phase}
+    </div>
+  );
+}
+
+// Same icon + colour GitHub uses for each reviewer state in its Reviewers sidebar.
+const REVIEWER_STATES = {
+  APPROVED: { Icon: Check, color: '#2e7d5e', label: 'Approved' },
+  CHANGES_REQUESTED: { Icon: FileDiff, color: '#c0392b', label: 'Changes requested' },
+  COMMENTED: { Icon: MessageSquare, color: '#6b7a99', label: 'Commented' },
+  PENDING: { Icon: Circle, color: '#d97706', label: 'Review pending', filled: true },
+};
+
+function ReviewerList({ reviewers }) {
+  if (!reviewers?.length) return null;
+  return (
+    <div className="flex items-center gap-3 mt-1 overflow-hidden">
+      {reviewers.map(({ login, state }) => {
+        const s = REVIEWER_STATES[state] || REVIEWER_STATES.COMMENTED;
+        return (
+          <span
+            key={login}
+            className="inline-flex items-center gap-1 text-[11px] text-[#6b7a99] whitespace-nowrap"
+            title={`${login}: ${s.label}`}
+          >
+            <s.Icon
+              size={s.filled ? 8 : 12}
+              strokeWidth={2.5}
+              color={s.color}
+              fill={s.filled ? s.color : 'none'}
+              className="shrink-0"
+            />
+            {login}
+          </span>
+        );
+      })}
+    </div>
   );
 }
 
@@ -268,7 +320,7 @@ export function PROpenPrsTab({ openPrs }) {
                     <th
                       key={col.key}
                       onClick={() => handleSort(col.key)}
-                      className="text-left px-3 py-2 font-semibold text-[#6b7a99] text-[11px] uppercase tracking-[.4px] cursor-pointer select-none hover:text-[#3b6cb7] truncate"
+                      className={`${col.align === 'center' ? 'text-center' : 'text-left'} px-3 py-2 font-semibold text-[#6b7a99] text-[11px] uppercase tracking-[.4px] cursor-pointer select-none hover:text-[#3b6cb7] truncate`}
                     >
                       <span className="inline-flex items-center gap-1">
                         {col.label}
@@ -295,15 +347,18 @@ export function PROpenPrsTab({ openPrs }) {
                     i % 2 === 0 ? '' : 'bg-[#fafbfc]'
                   }`}
                 >
-                  <td className="px-3 py-2 text-[#1a2332] truncate" title={`#${pr.number} - ${pr.title}`}>
-                    <a
-                      href={pr.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="hover:text-[#3b6cb7] hover:underline"
-                    >
-                      #{pr.number} - {pr.title}
-                    </a>
+                  <td className="px-3 py-2 text-[#1a2332] overflow-hidden">
+                    <div className="truncate" title={`#${pr.number} - ${pr.title}`}>
+                      <a
+                        href={pr.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="hover:text-[#3b6cb7] hover:underline"
+                      >
+                        #{pr.number} - {pr.title}
+                      </a>
+                    </div>
+                    <ReviewerList reviewers={pr.reviewers} />
                   </td>
                   <td className="px-3 py-2 text-[#6b7a99] truncate" title={pr.author}>{pr.author}</td>
                   <td className="px-3 py-2 overflow-hidden" title={`${pr.repo}${pr.branch ? ' / ' + pr.branch : ''}`}>
@@ -318,9 +373,9 @@ export function PROpenPrsTab({ openPrs }) {
                     {' '}
                     <span className="text-[#c0392b]">-{pr.deletions}</span>
                   </td>
-                  <td className="px-3 py-2 overflow-hidden">
+                  <td className="px-3 py-2 overflow-hidden text-center">
                     <StatusPill status={pr.status} />
-                    <div className="text-[10px] text-[#8896b0] truncate mt-0.5">{pr.phase}</div>
+                    {pr.phase && <PhaseLabel phase={pr.phase} />}
                   </td>
                 </tr>
               ))}

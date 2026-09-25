@@ -302,6 +302,32 @@ function getPhase(reviews, reviewDecision) {
   return 'Review in progress';
 }
 
+// Mirrors GitHub's Reviewers sidebar: one entry per human reviewer. A pending
+// review request wins (GitHub shows re-requested reviewers as pending), then
+// the latest approve/changes-requested decision, then a comment-only review.
+// Bots and the PR author are left out.
+function getReviewers(node) {
+  const author = node.author?.login;
+  const byLogin = new Map();
+  const add = (login, state) => {
+    if (login && login !== author && !byLogin.has(login)) byLogin.set(login, state);
+  };
+  const isHuman = (a) => a && a.__typename !== 'Bot';
+
+  for (const r of node.reviewRequests?.nodes || []) {
+    const rr = r.requestedReviewer;
+    if (rr?.__typename === 'User') add(rr.login, 'PENDING');
+    else if (rr?.__typename === 'Team') add(rr.name, 'PENDING');
+  }
+  for (const r of node.latestOpinionatedReviews?.nodes || []) {
+    if (isHuman(r.author) && r.state !== 'DISMISSED') add(r.author.login, r.state);
+  }
+  for (const r of node.latestReviews?.nodes || []) {
+    if (isHuman(r.author) && r.state === 'COMMENTED') add(r.author.login, 'COMMENTED');
+  }
+  return [...byLogin].map(([login, state]) => ({ login, state }));
+}
+
 // Flattens a GraphQL PR node into a plain shape the rest of the code uses.
 function normalizePRNode(node, repo) {
   return {
@@ -321,6 +347,7 @@ function normalizePRNode(node, repo) {
       submittedAt: r.submittedAt,
       isBot: r.author?.__typename === 'Bot',
     })),
+    reviewers: getReviewers(node),
     files: (node.files?.nodes || []).map((f) => ({
       path: f.path,
       additions: f.additions,
@@ -338,6 +365,15 @@ const PR_FIELDS = `
   reviewDecision
   reviews(first: 20) {
     nodes { state submittedAt author { login __typename } }
+  }
+  latestOpinionatedReviews(first: 20) {
+    nodes { state author { login __typename } }
+  }
+  latestReviews(first: 20) {
+    nodes { state author { login __typename } }
+  }
+  reviewRequests(first: 20) {
+    nodes { requestedReviewer { __typename ... on User { login } ... on Team { name } } }
   }
   files(first: 100) {
     pageInfo { hasNextPage endCursor }
@@ -771,6 +807,7 @@ function mapOpenPRRecords(records, now) {
         deletions: size.deletions,
         phase,
         status,
+        reviewers: rec.reviewers,
         createdAt: rec.createdAt,
       };
     });
@@ -800,6 +837,7 @@ function mapResolvedPRRecords(records) {
       deletions: size.deletions,
       phase,
       status: state === 'MERGED' ? 'Merged' : 'Closed',
+      reviewers: rec.reviewers,
       createdAt: rec.createdAt,
     };
   });
