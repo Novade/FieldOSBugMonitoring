@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ChevronUp, ChevronDown, ChevronsUpDown, Check, FileDiff, MessageSquare, Circle } from 'lucide-react';
+import { ChevronUp, ChevronDown, ChevronsUpDown, Check, X, GitMerge, FileDiff, MessageSquare, Circle } from 'lucide-react';
 import { formatHoursShort } from '../../utils/dateUtils';
 import { fetchGHResolvedPRs } from '../../services/githubService';
 import { FilterBar } from '../common/FilterBar';
@@ -80,7 +80,74 @@ function StatusPill({ status }) {
 
 // Phase sits under the SLA pill, so it's coloured text rather than a
 // second pill — readable, but visually secondary to the SLA status.
-function PhaseLabel({ phase }) {
+// Instant hover label instead of `title` — the native one has a ~1s browser
+// delay. position: fixed so the cell's overflow-hidden doesn't clip it.
+function Tooltip({ label, className = '', children }) {
+  const [tip, setTip] = useState(null);
+  return (
+    <span
+      className={className}
+      onMouseEnter={(e) => {
+        const r = e.currentTarget.getBoundingClientRect();
+        setTip({ x: r.left + r.width / 2, y: r.top });
+      }}
+      onMouseLeave={() => setTip(null)}
+    >
+      {tip && (
+        <span
+          className="fixed z-50 -translate-x-1/2 -translate-y-full px-2 py-1 rounded bg-[#1a2332] text-white text-[11px] font-medium whitespace-nowrap pointer-events-none"
+          style={{ left: tip.x, top: tip.y - 4 }}
+        >
+          {label}
+        </span>
+      )}
+      {children}
+    </span>
+  );
+}
+
+// Shared by reviewer and CI states: filled dots render smaller so they read
+// at the same visual weight as the stroke icons.
+function StateIcon({ state }) {
+  return (
+    <state.Icon
+      size={state.filled ? 8 : 12}
+      strokeWidth={2.5}
+      color={state.color}
+      fill={state.filled ? state.color : 'none'}
+      className="shrink-0"
+    />
+  );
+}
+
+// CI icon reuses the reviewer icon style: filled amber dot while running,
+// green check when all checks pass, red cross when any check fails.
+const CI_STATES = {
+  running: { Icon: Circle, color: '#d97706', label: 'CI running', filled: true },
+  passed: { Icon: Check, color: '#2e7d5e', label: 'CI passed' },
+  failed: { Icon: X, color: '#c0392b', label: 'CI failed' },
+};
+
+function CiIcon({ ciStatus }) {
+  const s = CI_STATES[ciStatus];
+  if (!s) return null;
+  return (
+    <Tooltip label={s.label} className="inline-flex shrink-0">
+      <StateIcon state={s} />
+    </Tooltip>
+  );
+}
+
+// Only rendered when the PR actually has a merge conflict.
+function ConflictIcon() {
+  return (
+    <Tooltip label="Merge conflict" className="inline-flex shrink-0">
+      <StateIcon state={{ Icon: GitMerge, color: '#c0392b' }} />
+    </Tooltip>
+  );
+}
+
+function PhaseLabel({ phase, ciStatus, hasConflict }) {
   const colors = {
     Approved: '#2e7d5e',
     'Changes requested': '#c2410c',
@@ -89,8 +156,10 @@ function PhaseLabel({ phase }) {
   };
   const color = colors[phase] || '#6b7a99';
   return (
-    <div className="mt-1 text-[11px] font-medium truncate" style={{ color }}>
-      {phase}
+    <div className="mt-1 flex items-center justify-center gap-1 text-[11px] font-medium" style={{ color }}>
+      <span className="truncate">{phase}</span>
+      <CiIcon ciStatus={ciStatus} />
+      {hasConflict && <ConflictIcon />}
     </div>
   );
 }
@@ -110,20 +179,14 @@ function ReviewerList({ reviewers }) {
       {reviewers.map(({ login, state }) => {
         const s = REVIEWER_STATES[state] || REVIEWER_STATES.COMMENTED;
         return (
-          <span
+          <Tooltip
             key={login}
+            label={`${login}: ${s.label}`}
             className="inline-flex items-center gap-1 text-[11px] text-[#6b7a99] whitespace-nowrap"
-            title={`${login}: ${s.label}`}
           >
-            <s.Icon
-              size={s.filled ? 8 : 12}
-              strokeWidth={2.5}
-              color={s.color}
-              fill={s.filled ? s.color : 'none'}
-              className="shrink-0"
-            />
+            <StateIcon state={s} />
             {login}
-          </span>
+          </Tooltip>
         );
       })}
     </div>
@@ -375,7 +438,7 @@ export function PROpenPrsTab({ openPrs }) {
                   </td>
                   <td className="px-3 py-2 overflow-hidden text-center">
                     <StatusPill status={pr.status} />
-                    {pr.phase && <PhaseLabel phase={pr.phase} />}
+                    {pr.phase && <PhaseLabel phase={pr.phase} ciStatus={pr.ciStatus} hasConflict={pr.hasConflict} />}
                   </td>
                 </tr>
               ))}

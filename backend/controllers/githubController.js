@@ -328,6 +328,16 @@ function getReviewers(node) {
   return [...byLogin].map(([login, state]) => ({ login, state }));
 }
 
+// Combined state of every check/status on the PR's head commit, as GitHub
+// shows it next to the commit. null = no CI configured/reported yet.
+function getCiStatus(node) {
+  const state = node.commits?.nodes?.[0]?.commit?.statusCheckRollup?.state;
+  if (state === 'SUCCESS') return 'passed';
+  if (state === 'FAILURE' || state === 'ERROR') return 'failed';
+  if (state === 'PENDING' || state === 'EXPECTED') return 'running';
+  return null;
+}
+
 // Flattens a GraphQL PR node into a plain shape the rest of the code uses.
 function normalizePRNode(node, repo) {
   return {
@@ -348,6 +358,9 @@ function normalizePRNode(node, repo) {
       isBot: r.author?.__typename === 'Bot',
     })),
     reviewers: getReviewers(node),
+    ciStatus: getCiStatus(node),
+    // UNKNOWN while GitHub is still computing it — treated as no conflict.
+    hasConflict: node.mergeable === 'CONFLICTING',
     files: (node.files?.nodes || []).map((f) => ({
       path: f.path,
       additions: f.additions,
@@ -360,7 +373,7 @@ function normalizePRNode(node, repo) {
 
 // --- GraphQL queries ---
 const PR_FIELDS = `
-  number title url createdAt mergedAt closedAt isDraft baseRefName
+  number title url createdAt mergedAt closedAt isDraft baseRefName mergeable
   author { login }
   reviewDecision
   reviews(first: 20) {
@@ -374,6 +387,9 @@ const PR_FIELDS = `
   }
   reviewRequests(first: 20) {
     nodes { requestedReviewer { __typename ... on User { login } ... on Team { name } } }
+  }
+  commits(last: 1) {
+    nodes { commit { statusCheckRollup { state } } }
   }
   files(first: 100) {
     pageInfo { hasNextPage endCursor }
@@ -808,6 +824,8 @@ function mapOpenPRRecords(records, now) {
         phase,
         status,
         reviewers: rec.reviewers,
+        ciStatus: rec.ciStatus,
+        hasConflict: rec.hasConflict,
         createdAt: rec.createdAt,
       };
     });
@@ -838,6 +856,7 @@ function mapResolvedPRRecords(records) {
       phase,
       status: state === 'MERGED' ? 'Merged' : 'Closed',
       reviewers: rec.reviewers,
+      ciStatus: rec.ciStatus,
       createdAt: rec.createdAt,
     };
   });
