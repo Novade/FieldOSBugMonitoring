@@ -5,12 +5,12 @@
     "prodFrom": "2026-09-22",
     "prodTo": "2026-10-05",
     "testFrom": "2026-09-10",
-    "testTo": "2026-09-21",
+    "testTo": "2026-10-02",
     "prodCount": 14,
-    "testCount": 9,
-    "total": 23,
-    "rate": 60.9,
-    "computedAt": "2026-10-05T05:09:10.934Z",
+    "testCount": 17,
+    "total": 31,
+    "rate": 45.2,
+    "computedAt": "2026-10-05T05:14:59.953Z",
     "createdBy": "Paul Emill Macalaguim",
     "updatedBy": "Paul Emill Macalaguim"
   }
