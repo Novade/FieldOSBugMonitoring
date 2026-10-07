@@ -10,7 +10,7 @@
     "testCount": 11,
     "total": 29,
     "rate": 62.1,
-    "computedAt": "2026-10-06T05:52:13.063Z",
+    "computedAt": "2026-10-07T07:11:49.656Z",
     "createdBy": "Paul Emill Macalaguim",
     "updatedBy": "Paul Emill Macalaguim"
   },
@@ -21,11 +21,11 @@
     "testTo": "2026-10-06",
     "prodFrom": "2026-10-06",
     "prodTo": "2026-10-16",
-    "prodCount": 0,
+    "prodCount": 3,
     "testCount": 6,
-    "total": 6,
-    "rate": 0,
-    "computedAt": "2026-10-06T05:52:13.146Z",
+    "total": 9,
+    "rate": 33.3,
+    "computedAt": "2026-10-07T07:11:49.656Z",
     "createdBy": "Paul Emill Macalaguim",
     "updatedBy": "Paul Emill Macalaguim"
   }
