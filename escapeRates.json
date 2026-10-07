@@ -1,1 +1,17 @@
-[]
+[
+  {
+    "id": "dd834c05-7ec5-42d3-8e77-3e545d331170",
+    "version": "v2.76.0",
+    "testFrom": "2026-09-10",
+    "testTo": "2026-09-22",
+    "prodFrom": "2026-09-22",
+    "prodTo": "2026-10-05",
+    "prodCount": 18,
+    "testCount": 11,
+    "total": 29,
+    "rate": 62.1,
+    "computedAt": "2026-10-07T09:11:14.891Z",
+    "createdBy": "Paul Emill Macalaguim",
+    "updatedBy": "Paul Emill Macalaguim"
+  }
+]
