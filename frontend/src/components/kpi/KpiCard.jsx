@@ -1,4 +1,5 @@
 import { Tooltip } from '../common/Tooltip';
+import { useHoverLabel } from '../common/HoverLabel';
 
 const ACCENT = {
   created: 'before:bg-[#3b6cb7]',
@@ -34,11 +35,12 @@ export function KpiCard({
     group === 'primary'
       ? 'flex-[1_1_0] min-w-[180px] max-w-[300px]'
       : 'flex-[1_1_0] min-w-[160px] max-w-[260px]';
+  const { hoverProps, tip } = useHoverLabel(onClick ? `View ${label.toLowerCase()}` : null);
 
   return (
     <div
       onClick={onClick}
-      title={onClick ? `View ${label.toLowerCase()}` : undefined}
+      {...hoverProps}
       className={`relative bg-white rounded-lg border border-[#dde2ea] px-4 py-[14px] cursor-pointer transition-all duration-150
         hover:border-brand hover:shadow-[0_2px_12px_rgba(59,108,183,.12)]
         before:content-[''] before:absolute before:top-0 before:left-0 before:right-0 before:h-[3px] before:rounded-t-lg ${accent}
@@ -64,6 +66,7 @@ export function KpiCard({
         {value ?? '-'}
       </div>
       {sub && <div className="text-[11px] text-[#8896b0] mt-3">{sub}</div>}
+      {tip}
     </div>
   );
 }
