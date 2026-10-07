@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { StatusPill, PriorityPill } from '../common/Pill';
 import { DrillBadge } from './DrillBadge';
 import { FilterBar } from './FilterBar';
+import { HoverLabel } from '../common/HoverLabel';
 import { isOpen, isDeploy, isResolved, isDeployed, hasNoActionDoneLabel, needsDeployment } from '../../utils/issueUtils';
 import { ws } from '../../utils/dateUtils';
 import { PSORT } from '../../constants/jira';
@@ -254,9 +255,8 @@ export function BacklogTable({ issues, drill, onClearDrill, showWorkspace = fals
                         ? 'border-b border-[#eef0f4]'
                         : ''
                     }`}
-                    title={b.s}
                   >
-                    {b.s}
+                    <HoverLabel as="div" className="truncate" label={b.s}>{b.s}</HoverLabel>
                   </td>
                   <td
                     className={`px-3.5 py-[9px] ${
@@ -292,9 +292,10 @@ export function BacklogTable({ issues, drill, onClearDrill, showWorkspace = fals
                           ? 'border-b border-[#eef0f4]'
                           : ''
                       }`}
-                      title={b.w?.length ? b.w.join(' & ') : '-'}
                     >
-                      {b.w?.length ? b.w.join(' & ') : '-'}
+                      <HoverLabel as="div" className="truncate" label={b.w?.length ? b.w.join(' & ') : '-'}>
+                        {b.w?.length ? b.w.join(' & ') : '-'}
+                      </HoverLabel>
                     </td>
                   )}
                   <td

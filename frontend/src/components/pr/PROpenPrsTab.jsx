@@ -3,6 +3,7 @@ import { ChevronUp, ChevronDown, ChevronsUpDown, Check, X, GitMerge, FileDiff, M
 import { formatHoursShort } from '../../utils/dateUtils';
 import { fetchGHResolvedPRs } from '../../services/githubService';
 import { FilterBar } from '../common/FilterBar';
+import { HoverLabel } from '../common/HoverLabel';
 
 const LEGEND_ITEMS = [
   { color: '#c0392b', label: 'Breaching' },
@@ -80,32 +81,6 @@ function StatusPill({ status }) {
 
 // Phase sits under the SLA pill, so it's coloured text rather than a
 // second pill — readable, but visually secondary to the SLA status.
-// Instant hover label instead of `title` — the native one has a ~1s browser
-// delay. position: fixed so the cell's overflow-hidden doesn't clip it.
-function Tooltip({ label, className = '', children }) {
-  const [tip, setTip] = useState(null);
-  return (
-    <span
-      className={className}
-      onMouseEnter={(e) => {
-        const r = e.currentTarget.getBoundingClientRect();
-        setTip({ x: r.left + r.width / 2, y: r.top });
-      }}
-      onMouseLeave={() => setTip(null)}
-    >
-      {tip && (
-        <span
-          className="fixed z-50 -translate-x-1/2 -translate-y-full px-2 py-1 rounded bg-[#1a2332] text-white text-[11px] font-medium whitespace-nowrap pointer-events-none"
-          style={{ left: tip.x, top: tip.y - 4 }}
-        >
-          {label}
-        </span>
-      )}
-      {children}
-    </span>
-  );
-}
-
 // Shared by reviewer and CI states: filled dots render smaller so they read
 // at the same visual weight as the stroke icons.
 function StateIcon({ state }) {
@@ -132,18 +107,18 @@ function CiIcon({ ciStatus }) {
   const s = CI_STATES[ciStatus];
   if (!s) return null;
   return (
-    <Tooltip label={s.label} className="inline-flex shrink-0">
+    <HoverLabel label={s.label} className="inline-flex shrink-0">
       <StateIcon state={s} />
-    </Tooltip>
+    </HoverLabel>
   );
 }
 
 // Only rendered when the PR actually has a merge conflict.
 function ConflictIcon() {
   return (
-    <Tooltip label="Merge conflict" className="inline-flex shrink-0">
+    <HoverLabel label="Merge conflict" className="inline-flex shrink-0">
       <StateIcon state={{ Icon: GitMerge, color: '#c0392b' }} />
-    </Tooltip>
+    </HoverLabel>
   );
 }
 
@@ -179,14 +154,14 @@ function ReviewerList({ reviewers }) {
       {reviewers.map(({ login, state }) => {
         const s = REVIEWER_STATES[state] || REVIEWER_STATES.COMMENTED;
         return (
-          <Tooltip
+          <HoverLabel
             key={login}
             label={`${login}: ${s.label}`}
             className="inline-flex items-center gap-1 text-[11px] text-[#6b7a99] whitespace-nowrap"
           >
             <StateIcon state={s} />
             {login}
-          </Tooltip>
+          </HoverLabel>
         );
       })}
     </div>
@@ -411,7 +386,7 @@ export function PROpenPrsTab({ openPrs }) {
                   }`}
                 >
                   <td className="px-3 py-2 text-[#1a2332] overflow-hidden">
-                    <div className="truncate" title={`#${pr.number} - ${pr.title}`}>
+                    <HoverLabel as="div" className="truncate" label={`#${pr.number} - ${pr.title}`}>
                       <a
                         href={pr.url}
                         target="_blank"
@@ -420,13 +395,17 @@ export function PROpenPrsTab({ openPrs }) {
                       >
                         #{pr.number} - {pr.title}
                       </a>
-                    </div>
+                    </HoverLabel>
                     <ReviewerList reviewers={pr.reviewers} />
                   </td>
-                  <td className="px-3 py-2 text-[#6b7a99] truncate" title={pr.author}>{pr.author}</td>
-                  <td className="px-3 py-2 overflow-hidden" title={`${pr.repo}${pr.branch ? ' / ' + pr.branch : ''}`}>
-                    <div className="text-[#6b7a99] truncate">{pr.repo}</div>
-                    {pr.branch && <div className="text-[10px] text-[#8896b0] truncate">{pr.branch}</div>}
+                  <td className="px-3 py-2 text-[#6b7a99] truncate">
+                    <HoverLabel as="div" className="truncate" label={pr.author}>{pr.author}</HoverLabel>
+                  </td>
+                  <td className="px-3 py-2 overflow-hidden">
+                    <HoverLabel as="div" label={`${pr.repo}${pr.branch ? ' / ' + pr.branch : ''}`}>
+                      <div className="text-[#6b7a99] truncate">{pr.repo}</div>
+                      {pr.branch && <div className="text-[10px] text-[#8896b0] truncate">{pr.branch}</div>}
+                    </HoverLabel>
                   </td>
                   <td className="px-3 py-2 text-[#1a2332] truncate font-medium">
                     {pr.elapsedHours != null ? formatHoursShort(pr.elapsedHours) : '—'}
