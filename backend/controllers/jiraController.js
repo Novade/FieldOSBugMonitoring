@@ -108,4 +108,4 @@ async function getWorkspaceNames(req, res, next) {
   }
 }
 
-module.exports = { getBugs, getWorkspaceNames };
+module.exports = { getBugs, getWorkspaceNames, jiraClient };

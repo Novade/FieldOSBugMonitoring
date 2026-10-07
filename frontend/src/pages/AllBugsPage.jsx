@@ -4,21 +4,25 @@ import { useJiraData } from '../hooks/useJiraData';
 import { Banner } from '../components/common/Banner';
 import { BugsDashboard } from '../components/dashboard/BugsDashboard';
 import { BacklogTable } from '../components/backlog/BacklogTable';
+import { EscapeRateTab } from '../components/escapeRate/EscapeRateTab';
 import { SyncTimeContext } from '../components/layout/MainLayout';
 
 const SECTIONS = [
   { id: 'dashboard', label: 'Dashboard' },
   { id: 'backlog', label: 'Backlog' },
+  { id: 'escape-rate', label: 'Escape Rate' },
 ];
 
 const PATH_TO_TAB = {
   '/bugs/dashboard': 'dashboard',
   '/bugs/backlog': 'backlog',
+  '/bugs/escape-rate': 'escape-rate',
 };
 
 const TAB_TO_PATH = {
   dashboard: '/bugs/dashboard',
   backlog: '/bugs/backlog',
+  'escape-rate': '/bugs/escape-rate',
 };
 
 export function AllBugsPage() {
@@ -81,6 +85,7 @@ export function AllBugsPage() {
       {activeTab === 'backlog' && (
         <BacklogTable issues={bugs} drill={bugDrill} onClearDrill={() => setBugDrill(null)} />
       )}
+      {activeTab === 'escape-rate' && <EscapeRateTab />}
     </div>
   );
 }
