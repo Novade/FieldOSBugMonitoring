@@ -5,7 +5,11 @@ export const isDeploy = (b) => DEPLOY_STATUSES.has(b.st);
 export const isResolved = (b) => b.st === 'Done' && !!b.r;
 export const isDeployed = (b) => b.st === 'Done' && !!b.d;
 export const hasNoActionDoneLabel = (b) => !!b.l?.includes('no-action-done');
-export const needsDeployment = (b) => b.st === 'Done' && !hasNoActionDoneLabel(b) && !b.d;
+// Excluded from "Validated, pending deployment" (matched case-insensitively)
+const NO_DEPLOY_LABELS = new Set(['qa-bug', 'cannot-reproduce', 'duplicate']);
+const hasNoDeployLabel = (b) => !!b.l?.some((l) => NO_DEPLOY_LABELS.has(l.toLowerCase()));
+export const needsDeployment = (b) =>
+  b.st === 'Done' && !hasNoActionDoneLabel(b) && !hasNoDeployLabel(b) && !b.d;
 
 export function pillStatus(s) {
   if (s === 'Done') return 'bg-[#e6f4ed] text-[#1a6641]';
