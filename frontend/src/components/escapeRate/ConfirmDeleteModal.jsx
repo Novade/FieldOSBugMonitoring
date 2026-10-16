@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Modal } from '../common/Modal';
 import { Banner } from '../common/Banner';
-import { btnDanger, btnSecondary } from './styles';
+import { btnDanger, btnSecondary } from '../common/tableStyles';
 
 export function ConfirmDeleteModal({ entry, onClose, onConfirm }) {
   const [deleting, setDeleting] = useState(false);

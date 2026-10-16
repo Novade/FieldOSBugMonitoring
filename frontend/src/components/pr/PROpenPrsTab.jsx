@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
-import { ChevronUp, ChevronDown, ChevronsUpDown, Check, X, GitMerge, FileDiff, MessageSquare, Circle } from 'lucide-react';
+import { ChevronUp, ChevronDown, ChevronsUpDown, Check, GitMerge, FileDiff, MessageSquare, Circle } from 'lucide-react';
 import { formatHoursShort } from '../../utils/dateUtils';
 import { fetchGHResolvedPRs } from '../../services/githubService';
 import { FilterBar } from '../common/FilterBar';
 import { HoverLabel } from '../common/HoverLabel';
+import { RESULT_STATES, StateIcon } from '../common/StateIcon';
 
 const LEGEND_ITEMS = [
   { color: '#c0392b', label: 'Breaching' },
@@ -79,28 +80,12 @@ function StatusPill({ status }) {
   );
 }
 
-// Phase sits under the SLA pill, so it's coloured text rather than a
-// second pill — readable, but visually secondary to the SLA status.
-// Shared by reviewer and CI states: filled dots render smaller so they read
-// at the same visual weight as the stroke icons.
-function StateIcon({ state }) {
-  return (
-    <state.Icon
-      size={state.filled ? 8 : 12}
-      strokeWidth={2.5}
-      color={state.color}
-      fill={state.filled ? state.color : 'none'}
-      className="shrink-0"
-    />
-  );
-}
-
 // CI icon reuses the reviewer icon style: filled amber dot while running,
 // green check when all checks pass, red cross when any check fails.
 const CI_STATES = {
-  running: { Icon: Circle, color: '#d97706', label: 'CI running', filled: true },
-  passed: { Icon: Check, color: '#2e7d5e', label: 'CI passed' },
-  failed: { Icon: X, color: '#c0392b', label: 'CI failed' },
+  running: { ...RESULT_STATES.running, label: 'CI running' },
+  passed: { ...RESULT_STATES.passed, label: 'CI passed' },
+  failed: { ...RESULT_STATES.failed, label: 'CI failed' },
 };
 
 function CiIcon({ ciStatus }) {
@@ -122,6 +107,8 @@ function ConflictIcon() {
   );
 }
 
+// Phase sits under the SLA pill, so it's coloured text rather than a
+// second pill — readable, but visually secondary to the SLA status.
 function PhaseLabel({ phase, ciStatus, hasConflict }) {
   const colors = {
     Approved: '#2e7d5e',

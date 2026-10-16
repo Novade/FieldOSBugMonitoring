@@ -7,7 +7,7 @@ import { HoverLabel } from '../common/HoverLabel';
 import { StatusPill, PriorityPill } from '../common/Pill';
 import { PSORT } from '../../constants/jira';
 import { JIRA_BASE, SCOPE_LABELS, SOURCE_PILL } from '../../constants/escapeRate';
-import { td, th, thSortable } from './styles';
+import { td, th, thSortable } from '../common/tableStyles';
 
 function SourcePill({ src }) {
   const pill = SOURCE_PILL[src];

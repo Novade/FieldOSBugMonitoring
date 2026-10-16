@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Modal } from '../common/Modal';
 import { Banner } from '../common/Banner';
-import { btnPrimary, btnSecondary, input } from './styles';
+import { btnPrimary, btnSecondary, input } from '../common/tableStyles';
 
 const EMPTY = { version: '', prodFrom: '', prodTo: '', testFrom: '', testTo: '' };
 

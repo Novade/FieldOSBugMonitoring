@@ -1,5 +1,5 @@
-// Class strings copied from existing components (ErrorBoundary primary button,
-// FilterBar button/input, BacklogTable th/td) so this feature matches the app.
+// Shared table and form class strings (from ErrorBoundary primary button,
+// FilterBar button/input, BacklogTable th/td) so new pages match the app.
 export const btnPrimary =
   'inline-flex items-center gap-1.5 h-[34px] px-4 bg-brand text-white rounded-md text-[13px] font-medium hover:bg-brand-dark transition-colors disabled:opacity-60 disabled:cursor-not-allowed';
 

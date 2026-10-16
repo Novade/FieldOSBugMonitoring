@@ -3,7 +3,8 @@ import { Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { Card } from '../common/Card';
 import { Spinner } from '../common/Spinner';
 import { HoverLabel } from '../common/HoverLabel';
-import { btnPrimary, td, th } from './styles';
+import { IconButton } from '../common/IconButton';
+import { btnPrimary, td, th } from '../common/tableStyles';
 
 function formatRate(rate) {
   return rate === null || rate === undefined ? '—' : `${rate.toFixed(1)}%`;
@@ -26,24 +27,6 @@ function CountButton({ value, active, onClick, title }) {
         }`}
       >
         {value}
-      </button>
-    </HoverLabel>
-  );
-}
-
-function IconButton({ icon: Icon, label, onClick, disabled, spinning, danger }) {
-  return (
-    <HoverLabel label={label} className="inline-flex">
-      <button
-        type="button"
-        onClick={onClick}
-        disabled={disabled}
-        aria-label={label}
-        className={`p-1.5 rounded-md text-[#8896b0] transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
-          danger ? 'hover:bg-[#fdecea] hover:text-[#c0392b]' : 'hover:bg-[#eef2fb] hover:text-brand'
-        }`}
-      >
-        <Icon size={15} className={spinning ? 'animate-spin' : ''} />
       </button>
     </HoverLabel>
   );
