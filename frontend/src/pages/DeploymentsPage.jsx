@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { useDeployments } from '../hooks/useDeployments';
 import { Card } from '../components/common/Card';
@@ -5,11 +6,9 @@ import { Banner } from '../components/common/Banner';
 import { Spinner } from '../components/common/Spinner';
 import { KpiTile } from '../components/common/KpiTile';
 import { IconButton } from '../components/common/IconButton';
-import { StackedBarChart } from '../components/charts/StackedBarChart';
 import { ProjectDeployCard } from '../components/deployments/ProjectDeployCard';
 import { MonthlyDeployTable } from '../components/deployments/MonthlyDeployTable';
-import { GROUP_STYLES } from '../constants/deployments';
-import { formatMonth, formatSyncTime } from '../utils/dateUtils';
+import { formatSyncTime } from '../utils/dateUtils';
 
 // Prod deploys this month, last month and the average of the 3 months before this one.
 function buildKpis(months) {
@@ -28,12 +27,15 @@ function buildKpis(months) {
 
 export function DeploymentsPage() {
   const { data, loading, error, refresh } = useDeployments();
+  const [selectedYear, setSelectedYear] = useState('');
 
   if (loading && !data) return <Spinner label="Syncing deployments from Azure DevOps…" />;
 
   const pipelines = data?.pipelines ?? [];
   const { groups = [], months = [], completeFrom = null } = data?.monthly ?? {};
   const kpis = buildKpis(months);
+  const years = [...new Set(months.map((m) => m.month.slice(0, 4)))].reverse();
+  const yearMonths = months.filter((m) => m.month.startsWith(`${selectedYear}-`));
 
   return (
     <div className="max-w-[1380px] mx-auto px-7 py-6">
@@ -62,31 +64,33 @@ export function DeploymentsPage() {
             ))}
           </div>
 
-          <Card
-            accent="indigo"
-            title="Deployment frequency"
-            subtitle="Successful production deploys per month (DORA) — click a legend item to hide a project"
-            className="mb-4"
-          >
-            <StackedBarChart
-              id="cDeployFrequency"
-              labels={months.map((m) => formatMonth(m.month))}
-              series={groups.map((g) => ({
-                label: g,
-                data: months.map((m) => m.prod[g] || 0),
-                color: GROUP_STYLES[g]?.color ?? '#4a6280',
-              }))}
-              maxRotation={0}
-              showTotals
-            />
-          </Card>
+          <div className="flex justify-end mb-4">
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(e.target.value)}
+              className="text-[13px] border border-[#dde2ea] rounded-lg px-3 py-2 bg-white text-[#1a2332] cursor-pointer"
+            >
+              <option value="" disabled>Select year</option>
+              {years.map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+            </select>
+          </div>
 
           <Card
             accent="slate"
             title="Monthly breakdown"
-            subtitle="Successful production deploys per project, with staging totals for reference"
+            subtitle={
+              selectedYear
+                ? `${selectedYear} — successful production deploys per project, with staging totals for reference`
+                : 'Select a year to see successful deploys per month'
+            }
           >
-            <MonthlyDeployTable groups={groups} months={months} completeFrom={completeFrom} />
+            {selectedYear && (
+              <MonthlyDeployTable groups={groups} months={yearMonths} completeFrom={completeFrom} />
+            )}
           </Card>
         </>
       )}

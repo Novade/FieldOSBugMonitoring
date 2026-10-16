@@ -2,7 +2,7 @@ import { Card } from '../common/Card';
 import { HoverLabel } from '../common/HoverLabel';
 import { RESULT_STATES, StateIcon } from '../common/StateIcon';
 import { formatRelative } from '../../utils/dateUtils';
-import { ENV_LABELS, GROUP_STYLES } from '../../constants/deployments';
+import { ENV_LABELS, GROUP_ACCENTS } from '../../constants/deployments';
 
 const absoluteDate = (iso) =>
   new Date(iso).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
@@ -71,7 +71,7 @@ function PipelineRow({ pipeline }) {
 
 export function ProjectDeployCard({ group, pipelines }) {
   return (
-    <Card accent={GROUP_STYLES[group]?.accent} title={group}>
+    <Card accent={GROUP_ACCENTS[group]} title={group}>
       <table className="w-full border-collapse">
         <tbody>
           {pipelines.map((p) => (

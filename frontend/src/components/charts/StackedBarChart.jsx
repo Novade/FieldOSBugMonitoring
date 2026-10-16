@@ -16,7 +16,7 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 
 // Stacked bars with the app's tooltip style and clickable legend.
 // `series` is [{ label, data, color }]; `onBarClick(index)` gets the clicked x index.
-export function StackedBarChart({ id, labels, series, onBarClick, height = 260, maxRotation = 35, showTotals = false }) {
+export function StackedBarChart({ id, labels, series, onBarClick, height = 260 }) {
   const chartRef = useRef(null);
 
   const datasets = series.map((s) => ({
@@ -44,8 +44,8 @@ export function StackedBarChart({ id, labels, series, onBarClick, height = 260, 
       },
     },
     scales: {
-      x: { stacked: true, ticks: { font: { size: 11 }, maxRotation } },
-      y: { stacked: true, beginAtZero: true, ticks: { font: { size: 10 }, precision: 0 } },
+      x: { stacked: true, ticks: { font: { size: 11 }, maxRotation: 35 } },
+      y: { stacked: true, beginAtZero: true, ticks: { font: { size: 10 } } },
     },
     interaction: { mode: 'index', intersect: false },
     onClick: (_, els) => {
@@ -58,7 +58,7 @@ export function StackedBarChart({ id, labels, series, onBarClick, height = 260, 
       <div style={{ position: 'relative', height }}>
         <Bar ref={chartRef} data={{ labels, datasets }} options={options} id={id} />
       </div>
-      <ChartLegend datasets={datasets} chartRef={chartRef} showTotals={showTotals} />
+      <ChartLegend datasets={datasets} chartRef={chartRef} />
     </>
   );
 }
