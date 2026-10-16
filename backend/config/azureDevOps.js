@@ -7,8 +7,8 @@ const PIPELINES = [
   { group: 'Backend', project: 'NovadeLiteBackend', pipeline: 'Deploy to Production', env: 'prod' },
   { group: 'Report Export', project: 'NovadeLiteBackendServices', pipeline: 'ReportExportService Staging', env: 'staging' },
   { group: 'Report Export', project: 'NovadeLiteBackendServices', pipeline: 'ReportExportService Production', env: 'prod' },
-  { group: 'Mobile', platform: 'iOS', project: 'NovadeLite Mobile', pipeline: 'IOS Staging', env: 'staging' },
-  { group: 'Mobile', platform: 'iOS', project: 'NovadeLite Mobile', pipeline: 'IOS Production', env: 'prod' },
+  { group: 'Mobile', platform: 'iOS', project: 'NovadeLite Mobile', pipeline: 'iOS Staging', env: 'staging' },
+  { group: 'Mobile', platform: 'iOS', project: 'NovadeLite Mobile', pipeline: 'iOS Production', env: 'prod' },
   { group: 'Mobile', platform: 'Android', project: 'NovadeLite Mobile', pipeline: 'Android Staging', env: 'staging' },
   { group: 'Mobile', platform: 'Android', project: 'NovadeLite Mobile', pipeline: 'Android Production', env: 'prod' },
 ];

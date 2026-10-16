@@ -55,7 +55,9 @@ const definitionCache = createTtlCache(60 * 60 * 1000);
 function findDefinitionId(p) {
   return definitionCache.wrap(pipelineKey(p), async () => {
     const res = await azdoClient.get(`${project(p)}/definitions`, { params: { name: p.pipeline } });
-    return res.data.value.find((d) => d.name === p.pipeline)?.id ?? null;
+    // Azure DevOps names are case-insensitive ("IOS" and "iOS" are the same pipeline)
+    const name = p.pipeline.toLowerCase();
+    return res.data.value.find((d) => d.name.toLowerCase() === name)?.id ?? null;
   });
 }
 
