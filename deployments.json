@@ -2,6 +2,15 @@
   "firstSyncAt": "2026-10-16T03:13:56.858Z",
   "runs": [
     {
+      "id": 43839,
+      "pipeline": "NovadeLite Mobile/iOS Staging",
+      "result": "succeeded",
+      "finishTime": "2026-10-16T03:54:46.5752476Z",
+      "buildNumber": "20261016.1",
+      "branch": "release/2.78.x",
+      "commit": "9a1bfa22"
+    },
+    {
       "id": 43841,
       "pipeline": "NovadeLite Mobile/Android Staging",
       "result": "succeeded",
