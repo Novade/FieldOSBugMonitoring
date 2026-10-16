@@ -84,17 +84,83 @@ async function fetchRuns(p) {
   }));
 }
 
+const environmentCache = createTtlCache(azdoConfig.ENVIRONMENT_CACHE_TTL);
+const environmentsApi = (p) => `/${encodeURIComponent(p.project)}/_apis/distributedtask/environments`;
+const ENVIRONMENT_API_VERSION = '7.1-preview.1';
+
+// Every deployment job record of one environment, following continuation tokens.
+function fetchEnvironmentRecords(p) {
+  return environmentCache.wrap(`${p.project}/${p.environment}`, async () => {
+    const list = await azdoClient.get(environmentsApi(p), {
+      params: { name: p.environment, 'api-version': ENVIRONMENT_API_VERSION },
+    });
+    const environment = list.data.value.find((e) => e.name.toLowerCase() === p.environment.toLowerCase());
+    if (!environment) return [];
+
+    const records = [];
+    let continuationToken;
+    do {
+      const res = await azdoClient.get(`${environmentsApi(p)}/${environment.id}/environmentdeploymentrecords`, {
+        params: { top: 1000, continuationToken, 'api-version': ENVIRONMENT_API_VERSION },
+      });
+      records.push(...res.data.value);
+      continuationToken = res.headers['x-ms-continuationtoken'];
+    } while (continuationToken);
+    return records;
+  });
+}
+
+// Runs of one pipeline rebuilt from its environment's deployment history. An
+// environment can be shared by several pipelines and holds one record per job
+// attempt (Backend Production deploys 3 regions per run), so records are grouped
+// by run and only each job's last attempt counts: the run succeeded only when
+// every job did, matching how the pipeline itself reports the run.
+async function fetchEnvironmentRuns(p) {
+  if (!p.environment) return [];
+  const name = p.pipeline.toLowerCase();
+  const records = (await fetchEnvironmentRecords(p)).filter(
+    (r) => r.finishTime && r.definition?.name?.toLowerCase() === name
+  );
+
+  const jobsByRun = new Map();
+  for (const r of records) {
+    const jobs = jobsByRun.get(r.owner.id) ?? new Map();
+    const job = `${r.stageName}/${r.jobName}`;
+    if (!jobs.has(job) || r.finishTime > jobs.get(job).finishTime) jobs.set(job, r);
+    jobsByRun.set(r.owner.id, jobs);
+  }
+
+  return [...jobsByRun.entries()].map(([id, jobs]) => {
+    const last = [...jobs.values()];
+    const failed = last.find((r) => r.result !== 'succeeded');
+    return {
+      id,
+      pipeline: pipelineKey(p),
+      result: failed ? failed.result : 'succeeded',
+      finishTime: last.reduce((max, r) => (r.finishTime > max ? r.finishTime : max), ''),
+      buildNumber: last[0].owner.name,
+    };
+  });
+}
+
 const byFinishTimeDesc = (a, b) => b.finishTime.localeCompare(a.finishTime);
+const runKey = (r) => `${r.pipeline}#${r.id}`;
 
 // Fetches every pipeline's runs and commits any not yet stored. Azure DevOps
 // deletes old runs, so the stored file is what keeps the monthly history.
+// Runs from the runs list win over the same run rebuilt from environment
+// history, since only they carry the branch and commit.
 async function sync() {
-  const fetched = await Promise.all(PIPELINES.map(fetchRuns));
+  const [fetched, fromEnvironments] = await Promise.all([
+    Promise.all(PIPELINES.map(fetchRuns)),
+    Promise.all(PIPELINES.map(fetchEnvironmentRuns)),
+  ]);
   const missing = PIPELINES.filter((_, i) => fetched[i] === null).map(pipelineKey);
   const runs = fetched.flatMap((r) => r ?? []);
+  const listed = new Set(runs.map(runKey));
+  runs.push(...fromEnvironments.flat().filter((r) => !listed.has(runKey(r))));
 
   const data = await store.update((current) => {
-    const runKey = (r) => `${r.pipeline}#${r.id}`;
     const known = new Set(current.runs.map(runKey));
     const fresh = runs.filter((r) => !known.has(runKey(r)));
     if (!fresh.length) return null;
@@ -167,12 +233,19 @@ function nextMonth(ym) {
   return m === 12 ? `${y + 1}-01` : `${y}-${String(m + 1).padStart(2, '0')}`;
 }
 
-// Months starting before this may be missing runs Azure DevOps had already deleted.
+// Per group, the first month known to be complete. Groups whose pipelines all have
+// environment history are complete throughout; for the rest, months starting
+// before this may be missing runs Azure DevOps had already deleted.
 function completeFrom(firstSyncAt) {
-  if (!firstSyncAt) return null;
+  if (!firstSyncAt) return {};
   const d = new Date(firstSyncAt);
   d.setUTCDate(d.getUTCDate() - azdoConfig.RETENTION_DAYS);
-  return nextMonth(monthOf(d.toISOString()));
+  const month = nextMonth(monthOf(d.toISOString()));
+  const result = {};
+  for (const p of PIPELINES) {
+    if (p.env === 'prod' && !p.environment) result[p.group] = month;
+  }
+  return result;
 }
 
 async function getDeployments(req, res, next) {

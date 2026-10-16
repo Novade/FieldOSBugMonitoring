@@ -32,7 +32,7 @@ export function DeploymentsPage() {
   if (loading && !data) return <Spinner label="Syncing deployments from Azure DevOps…" />;
 
   const pipelines = data?.pipelines ?? [];
-  const { groups = [], months = [], completeFrom = null } = data?.monthly ?? {};
+  const { groups = [], months = [], completeFrom = {} } = data?.monthly ?? {};
   const kpis = buildKpis(months);
   const years = [...new Set(months.map((m) => m.month.slice(0, 4)))].reverse();
   const yearMonths = months.filter((m) => m.month.startsWith(`${selectedYear}-`));

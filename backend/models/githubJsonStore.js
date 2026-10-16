@@ -37,7 +37,16 @@ function createGithubJsonStore({ repo, path, branch, label, empty = [] }) {
   async function readAll() {
     try {
       const res = await ghClient.get(filePath, { params: { ref: branch } });
-      const json = Buffer.from(res.data.content, 'base64').toString('utf8');
+      // Files over 1 MB come back without inline content and must be fetched raw
+      const json =
+        res.data.encoding === 'none'
+          ? (await ghClient.get(filePath, {
+              params: { ref: branch },
+              headers: { Accept: 'application/vnd.github.raw+json' },
+              responseType: 'text',
+              transformResponse: (body) => body,
+            })).data
+          : Buffer.from(res.data.content, 'base64').toString('utf8');
       return { entries: json ? JSON.parse(json) : empty, sha: res.data.sha };
     } catch (err) {
       if (err.response?.status === 404) return { entries: empty, sha: undefined };
