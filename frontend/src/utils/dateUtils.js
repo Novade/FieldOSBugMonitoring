@@ -80,3 +80,9 @@ export function formatRelative(isoString) {
   if (days < 30) return `${days}d ago`;
   return `${Math.round(days / 30)}mo ago`;
 }
+
+// "2026-10" -> "Oct 2026"
+export function formatMonth(yearMonth) {
+  const [y, m] = yearMonth.split('-').map(Number);
+  return new Date(y, m - 1, 1).toLocaleString('en-US', { month: 'short', year: 'numeric' });
+}

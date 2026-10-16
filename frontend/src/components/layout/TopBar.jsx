@@ -4,7 +4,7 @@ import { formatSyncTime } from '../../utils/dateUtils';
 import Logo from '../../assets/logo.svg?react';
 
 // Pages that show their own inline "last sync" label instead of the TopBar one
-const OWN_SYNC_LABEL_PREFIXES = ['/pr-cycles'];
+const OWN_SYNC_LABEL_PREFIXES = ['/pr-cycles', '/deployments'];
 
 export function TopBar({ fetchedAt }) {
   const { user, logout } = useAuth();

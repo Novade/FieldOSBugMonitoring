@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Bug, Building2, GitMerge, LayoutDashboard, Server } from 'lucide-react';
+import { Bug, Building2, GitMerge, LayoutDashboard, Rocket, Server } from 'lucide-react';
 
 const NAV_ITEMS = [
   {
@@ -31,6 +31,12 @@ const NAV_ITEMS = [
     icon: GitMerge,
     path: '/pr-cycles',
     matchPrefixes: ['/pr-cycles'],
+  },
+  {
+    label: 'Deployments',
+    icon: Rocket,
+    path: '/deployments',
+    matchPrefixes: ['/deployments'],
   },
 ];
 
