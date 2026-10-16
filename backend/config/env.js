@@ -43,6 +43,10 @@ module.exports = {
     token: process.env.GITHUB_TOKEN,
     org: process.env.GITHUB_ORG,
   },
+  azureDevOps: {
+    org: process.env.AZDO_ORG || 'Novade',
+    pat: process.env.AZDO_PAT,
+  },
   session: {
     secret: process.env.SESSION_SECRET,
   },

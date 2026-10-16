@@ -16,8 +16,9 @@ const ghClient = axios.create({
 const MAX_WRITE_ATTEMPTS = 3;
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// `label` names the data in error messages, e.g. "escape rate".
-function createGithubJsonStore({ repo, path, branch, label }) {
+// `label` names the data in error messages, e.g. "escape rate". `empty` is
+// returned while the file doesn't exist yet.
+function createGithubJsonStore({ repo, path, branch, label, empty = [] }) {
   const filePath = `/repos/${config.github.org}/${repo}/contents/${path}`;
 
   function storeError(err, action) {
@@ -37,9 +38,9 @@ function createGithubJsonStore({ repo, path, branch, label }) {
     try {
       const res = await ghClient.get(filePath, { params: { ref: branch } });
       const json = Buffer.from(res.data.content, 'base64').toString('utf8');
-      return { entries: JSON.parse(json || '[]'), sha: res.data.sha };
+      return { entries: json ? JSON.parse(json) : empty, sha: res.data.sha };
     } catch (err) {
-      if (err.response?.status === 404) return { entries: [], sha: undefined };
+      if (err.response?.status === 404) return { entries: empty, sha: undefined };
       throw storeError(err, 'load');
     }
   }
