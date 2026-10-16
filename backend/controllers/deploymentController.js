@@ -164,10 +164,7 @@ async function sync() {
     const known = new Set(current.runs.map(runKey));
     const fresh = runs.filter((r) => !known.has(runKey(r)));
     if (!fresh.length) return null;
-    return {
-      firstSyncAt: current.firstSyncAt ?? new Date().toISOString(),
-      runs: [...current.runs, ...fresh].sort(byFinishTimeDesc),
-    };
+    return { runs: [...current.runs, ...fresh].sort(byFinishTimeDesc) };
   }, 'Sync deployment runs');
 
   return { ...data, missing, syncedAt: new Date().toISOString() };
@@ -233,29 +230,14 @@ function nextMonth(ym) {
   return m === 12 ? `${y + 1}-01` : `${y}-${String(m + 1).padStart(2, '0')}`;
 }
 
-// Per group, the first month known to be complete. Groups whose pipelines all have
-// environment history are complete throughout; for the rest, months starting
-// before this may be missing runs Azure DevOps had already deleted.
-function completeFrom(firstSyncAt) {
-  if (!firstSyncAt) return {};
-  const d = new Date(firstSyncAt);
-  d.setUTCDate(d.getUTCDate() - azdoConfig.RETENTION_DAYS);
-  const month = nextMonth(monthOf(d.toISOString()));
-  const result = {};
-  for (const p of PIPELINES) {
-    if (p.env === 'prod' && !p.environment) result[p.group] = month;
-  }
-  return result;
-}
-
 async function getDeployments(req, res, next) {
   try {
     assertConfigured();
     if (req.query.refresh === 'true') syncCache.clear();
-    const { runs, firstSyncAt, missing, syncedAt } = await cachedSync();
+    const { runs, missing, syncedAt } = await cachedSync();
     res.json({
       pipelines: buildPipelines(runs, missing),
-      monthly: { ...buildMonthly(runs), completeFrom: completeFrom(firstSyncAt) },
+      monthly: buildMonthly(runs),
       syncedAt,
     });
   } catch (err) {

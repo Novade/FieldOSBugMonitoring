@@ -19,9 +19,6 @@ module.exports = {
   PIPELINES,
   // Completed runs fetched per pipeline on each sync; more than any retention window holds.
   RUNS_PER_PIPELINE: 200,
-  // Azure DevOps' default run retention. For pipelines without an environment, months
-  // that started more than this many days before the first sync may be missing runs.
-  RETENTION_DAYS: 30,
   // Environment history only changes by adding the runs a sync already gets from
   // the runs list, so it's re-read at most once a day.
   ENVIRONMENT_CACHE_TTL: 24 * 60 * 60 * 1000,
