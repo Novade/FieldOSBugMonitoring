@@ -6,6 +6,8 @@ const ACCENT_COLORS = {
   slate: 'border-t-[#4a6280]',
   coral: 'border-t-[#c0392b]',
   amber: 'border-t-[#e67e22]',
+  green: 'border-t-[#2e7d5e]',
+  red: 'border-t-[#c0392b]',
 };
 
 export function Card({

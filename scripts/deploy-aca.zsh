@@ -40,6 +40,7 @@ ATLASSIAN_CLIENT_SECRET="$(prompt_secret 'ATLASSIAN_CLIENT_SECRET')"
 JIRA_CLOUD_ID="$(prompt_value 'JIRA_CLOUD_ID')"
 JIRA_USER_EMAIL="$(prompt_value 'JIRA_USER_EMAIL')"
 JIRA_API_TOKEN="$(prompt_secret 'JIRA_API_TOKEN')"
+AZDO_PAT="$(prompt_secret 'AZDO_PAT')"
 
 print -n "SESSION_SECRET (press Enter to generate one): " > /dev/tty
 read -rs SESSION_SECRET < /dev/tty
@@ -124,6 +125,7 @@ else
       atlassian-client-secret="$ATLASSIAN_CLIENT_SECRET" \
       jira-api-token="$JIRA_API_TOKEN" \
       session-secret="$SESSION_SECRET" \
+      azdo-pat="$AZDO_PAT" \
     --env-vars \
       NODE_ENV=production \
       PORT=3001 \
@@ -136,6 +138,8 @@ else
       ATLASSIAN_CLIENT_SECRET=secretref:atlassian-client-secret \
       JIRA_API_TOKEN=secretref:jira-api-token \
       SESSION_SECRET=secretref:session-secret \
+      AZDO_ORG=Novade \
+      AZDO_PAT=secretref:azdo-pat \
     --output none
 fi
 
@@ -148,6 +152,7 @@ az containerapp secret set \
     atlassian-client-secret="$ATLASSIAN_CLIENT_SECRET" \
     jira-api-token="$JIRA_API_TOKEN" \
     session-secret="$SESSION_SECRET" \
+    azdo-pat="$AZDO_PAT" \
   --output none
 
 FQDN="$(az containerapp show --name "$APP_NAME" --resource-group "$RESOURCE_GROUP" --query properties.configuration.ingress.fqdn --output tsv)"
@@ -161,6 +166,8 @@ az containerapp update \
   --set-env-vars \
     ATLASSIAN_CALLBACK_URL="$CALLBACK_URL" \
     FRONTEND_URL="$APP_URL" \
+    AZDO_ORG=Novade \
+    AZDO_PAT=secretref:azdo-pat \
   --output none
 
 print "Restarting revision with final configuration..."

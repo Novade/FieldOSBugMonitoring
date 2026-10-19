@@ -26,6 +26,16 @@ function resolveClientMessage(err, status) {
     if (status >= 500) return 'AdminLabs is currently unreachable. Please try again later.';
     return 'An error occurred while fetching data from AdminLabs.';
   }
+  if (err.isAzureDevOpsError) {
+    if (err.notConfigured) return err.message;
+    if (status === 401) return 'Azure DevOps authentication failed. AZDO_PAT may be invalid or expired.';
+    if (status === 403) return 'Access denied by Azure DevOps. AZDO_PAT needs the Build (Read) scope.';
+    if (status === 404) return 'Azure DevOps project not found. Check the project names in config/azureDevOps.js.';
+    if (status === 429) return 'Azure DevOps rate limit exceeded. Please wait a moment and try again.';
+    if (status >= 500) return 'Azure DevOps is currently unreachable. Please try again later.';
+    return 'An error occurred while fetching data from Azure DevOps.';
+  }
+  if (err.isStoreError) return err.message;
   if (err.isOAuthError) return err.message;
   if (status === 401) return 'Not authenticated. Please log in.';
   if (status === 400) return err.message || 'Bad request.';

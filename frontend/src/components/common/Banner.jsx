@@ -1,4 +1,4 @@
-export function Banner({ message, visible }) {
+export function Banner({ message, visible = true }) {
   if (!visible || !message) return null;
   return (
     <div className="flex items-center gap-2 bg-[#fffbeb] border border-[#fcd34d] rounded-md px-[14px] py-[10px] text-[12px] text-[#92400e] mb-4">

@@ -29,7 +29,7 @@ function handle(fn) {
     try {
       await fn(req, res);
     } catch (err) {
-      if (err.isEscapeRateError || err.isEscapeRateStoreError) {
+      if (err.isEscapeRateError || err.isStoreError) {
         return res.status(err.status).json({ error: err.message });
       }
       next(err);

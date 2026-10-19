@@ -9,6 +9,8 @@ const jiraRoutes = require('./routes/jiraRoutes');
 const adminLabsRoutes = require('./routes/adminLabsRoutes');
 const githubRoutes = require('./routes/githubRoutes');
 const escapeRateRoutes = require('./routes/escapeRateRoutes');
+const deploymentRoutes = require('./routes/deploymentRoutes');
+const { startScheduledSync } = require('./controllers/deploymentController');
 const { errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
@@ -46,6 +48,7 @@ app.use('/api/jira', jiraRoutes);
 app.use('/api/adminlabs', adminLabsRoutes);
 app.use('/api/github', githubRoutes);
 app.use('/api/escape-rates', escapeRateRoutes);
+app.use('/api/deployments', deploymentRoutes);
 
 // Health check
 app.get('/health', (req, res) => res.json({ ok: true }));
@@ -65,4 +68,5 @@ app.use(errorHandler);
 
 app.listen(config.port, () => {
   console.log(`[server] Running on http://localhost:${config.port}`);
+  startScheduledSync();
 });

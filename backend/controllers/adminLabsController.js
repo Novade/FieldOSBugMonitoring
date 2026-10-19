@@ -1,6 +1,7 @@
 const axios = require('axios');
 const config = require('../config/env');
 const adminLabsConfig = require('../config/adminLabs');
+const { createTtlCache } = require('../utils/ttlCache');
 
 const adminLabsClient = axios.create({
   baseURL: adminLabsConfig.BASE_URL,
@@ -38,29 +39,24 @@ function assertCredentials() {
   }
 }
 
-let monitorCache = null;
-let monitorCacheTs = 0;
-const MONITOR_CACHE_TTL = 60 * 60 * 1000;
+const monitorCache = createTtlCache(60 * 60 * 1000);
 
-async function getMonitorIds() {
-  const now = Date.now();
-  if (monitorCache && now - monitorCacheTs < MONITOR_CACHE_TTL) return monitorCache;
+function getMonitorIds() {
+  return monitorCache.wrap('monitors', async () => {
+    const res = await adminLabsClient.get('/monitors');
+    const monitors = Array.isArray(res.data) ? res.data : res.data.monitors || [];
 
-  const res = await adminLabsClient.get('/monitors');
-  const monitors = Array.isArray(res.data) ? res.data : res.data.monitors || [];
-
-  monitorCache = adminLabsConfig.KNOWN_MONITOR_NAMES.map((name) => {
-    const found = monitors.find((m) => m.name === name);
-    if (!found) {
-      const e = new Error(`Monitor "${name}" not found in AdminLabs account`);
-      e.isAdminLabsError = true;
-      e.status = 404;
-      throw e;
-    }
-    return { id: String(found.id), name };
+    return adminLabsConfig.KNOWN_MONITOR_NAMES.map((name) => {
+      const found = monitors.find((m) => m.name === name);
+      if (!found) {
+        const e = new Error(`Monitor "${name}" not found in AdminLabs account`);
+        e.isAdminLabsError = true;
+        e.status = 404;
+        throw e;
+      }
+      return { id: String(found.id), name };
+    });
   });
-  monitorCacheTs = now;
-  return monitorCache;
 }
 
 // Shared by getHistory and getDaily — resolves monitorId to target monitor list
