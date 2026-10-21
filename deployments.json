@@ -1,6 +1,15 @@
 {
   "runs": [
     {
+      "id": 44125,
+      "pipeline": "NovadeLite Mobile/Android Production",
+      "result": "succeeded",
+      "finishTime": "2026-10-21T08:35:36.3555608Z",
+      "buildNumber": "20261021.3",
+      "branch": "release/2.78.x",
+      "commit": "330d7540"
+    },
+    {
       "id": 44122,
       "pipeline": "NovadeLite Mobile/Android Production",
       "result": "failed",
