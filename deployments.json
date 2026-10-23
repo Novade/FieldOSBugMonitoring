@@ -1,6 +1,42 @@
 {
   "runs": [
     {
+      "id": 44231,
+      "pipeline": "NovadeLiteBackend/Deploy to Production",
+      "result": "succeeded",
+      "finishTime": "2026-10-23T05:57:34.2337631Z",
+      "buildNumber": "20261023.1",
+      "branch": "release/1.78.x",
+      "commit": "045a4cd8"
+    },
+    {
+      "id": 44226,
+      "pipeline": "NovadeLite Mobile/iOS Production",
+      "result": "succeeded",
+      "finishTime": "2026-10-23T04:47:06.6110775Z",
+      "buildNumber": "20261023.1",
+      "branch": "release/2.78.x",
+      "commit": "aad4e6e6"
+    },
+    {
+      "id": 44227,
+      "pipeline": "NovadeLite Mobile/Android Production",
+      "result": "succeeded",
+      "finishTime": "2026-10-23T04:04:15.6294859Z",
+      "buildNumber": "20261023.1",
+      "branch": "release/2.78.x",
+      "commit": "aad4e6e6"
+    },
+    {
+      "id": 44222,
+      "pipeline": "NovadeLite Mobile/iOS Staging",
+      "result": "succeeded",
+      "finishTime": "2026-10-23T03:53:44.6360416Z",
+      "buildNumber": "20261023.2",
+      "branch": "release/2.79.x",
+      "commit": "cc174131"
+    },
+    {
       "id": 44220,
       "pipeline": "NovadeLite Mobile/iOS Staging",
       "result": "failed",
