@@ -1,6 +1,15 @@
 {
   "runs": [
     {
+      "id": 44220,
+      "pipeline": "NovadeLite Mobile/iOS Staging",
+      "result": "failed",
+      "finishTime": "2026-10-23T02:12:03.8294968Z",
+      "buildNumber": "20261023.1",
+      "branch": "release/2.79.x",
+      "commit": "c35cb86a"
+    },
+    {
       "id": 44207,
       "pipeline": "NovadeLite Mobile/iOS Staging",
       "result": "failed",
