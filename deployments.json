@@ -1,6 +1,24 @@
 {
   "runs": [
     {
+      "id": 44539,
+      "pipeline": "NovadeLite Web/Deploy to Staging",
+      "result": "succeeded",
+      "finishTime": "2026-10-30T08:51:57.5917326Z",
+      "buildNumber": "20261030.1",
+      "branch": "release/2.79.x",
+      "commit": "221bb1c5"
+    },
+    {
+      "id": 44533,
+      "pipeline": "NovadeLiteBackend/Deploy to Staging",
+      "result": "succeeded",
+      "finishTime": "2026-10-30T08:17:42.5339511Z",
+      "buildNumber": "20261030.1",
+      "branch": "release/1.79.x",
+      "commit": "02d76522"
+    },
+    {
       "id": 44352,
       "pipeline": "NovadeLiteBackend/Deploy to Production",
       "result": "succeeded",
