@@ -141,8 +141,30 @@ ghGraphQL.interceptors.response.use(
 
 // Runs a GraphQL query and returns the `data` object, throwing on GraphQL errors
 // (which arrive in the body with an HTTP 200).
+// Caps in-flight GitHub requests across every fetch (merged chunks, open,
+// resolved, retries) — GitHub's secondary rate limit penalises bursts of
+// concurrent requests, so parallelism is kept bounded here in one place.
+const MAX_CONCURRENT_REQUESTS = Number(process.env.GH_MAX_CONCURRENT) || 8;
+let activeRequests = 0;
+const requestQueue = [];
+
+async function withRequestSlot(fn) {
+  if (activeRequests >= MAX_CONCURRENT_REQUESTS) {
+    await new Promise((resolve) => requestQueue.push(resolve));
+  }
+  activeRequests++;
+  try {
+    return await fn();
+  } finally {
+    activeRequests--;
+    requestQueue.shift()?.();
+  }
+}
+
 async function gqlQuery(query, variables) {
-  const res = await ghGraphQL.post('', { query, variables });
+  const res = await withRequestSlot(() =>
+    ghGraphQL.post('', { query, variables })
+  );
   if (res.data.errors?.length) {
     const msg = res.data.errors.map((e) => e.message).join('; ');
     const e = new Error(`GitHub GraphQL error: ${msg}`);
@@ -397,17 +419,40 @@ const PR_FIELDS = `
   }
 `;
 
-const MERGED_PRS_QUERY = `
-  query($owner: String!, $name: String!, $cursor: String) {
-    repository(owner: $owner, name: $name) {
-      pullRequests(states: MERGED, first: 100, after: $cursor,
-                   orderBy: { field: CREATED_AT, direction: DESC }) {
-        pageInfo { hasNextPage endCursor }
-        nodes { ${PR_FIELDS} }
-      }
+// Merged PRs only feed cycle time / first review / size metrics, so they skip
+// the reviewer, CI and mergeable fields — mergeable in particular is slow for
+// GitHub to compute and was a big chunk of the cold-load time.
+const MERGED_PR_FIELDS = `
+  number title url createdAt mergedAt closedAt isDraft baseRefName
+  author { login }
+  reviewDecision
+  reviews(first: 20) {
+    nodes { state submittedAt author { login __typename } }
+  }
+  files(first: 100) {
+    pageInfo { hasNextPage endCursor }
+    nodes { path additions deletions }
+  }
+`;
+
+// Uses search (filtered by merge date) instead of repository.pullRequests:
+// the latter can only be ordered by created date, so it had to page through
+// every PR in a buffered window — 100 PRs with files each, 2-8s per page.
+// Search returns only PRs merged in the window, and 50/page keeps each
+// response light.
+const MERGED_PRS_SEARCH_QUERY = `
+  query($q: String!, $cursor: String) {
+    search(query: $q, type: ISSUE, first: 50, after: $cursor) {
+      pageInfo { hasNextPage endCursor }
+      nodes { ... on PullRequest { ${MERGED_PR_FIELDS} } }
     }
   }
 `;
+
+// The data window is split into this many merge-date ranges, fetched in
+// parallel — pages within one range are sequential, so busy repos like
+// NovadeLite would otherwise load page after page.
+const MERGED_FETCH_CHUNKS = 6;
 
 const OPEN_PRS_QUERY = `
   query($owner: String!, $name: String!, $cursor: String) {
@@ -421,7 +466,7 @@ const OPEN_PRS_QUERY = `
   }
 `;
 
-// Same shape as MERGED_PRS_QUERY but also pulls in CLOSED (non-merged) PRs —
+// Same PR fields as the open query but pulls MERGED and CLOSED (non-merged) PRs —
 // powers the PR Monitoring table's on-demand "show merged/closed" toggle.
 const RESOLVED_PRS_QUERY = `
   query($owner: String!, $name: String!, $cursor: String) {
@@ -500,27 +545,47 @@ async function fillTruncatedFiles(records) {
 }
 
 // --- Data fetching ---
-// Fetches all MERGED PRs for a repo created within the buffered window, with
-// reviews + files embedded. Paginates by createdAt (desc) and stops once PRs
-// fall before the buffer boundary.
+// Fetches all MERGED PRs for a repo merged since `since`, with reviews + files
+// embedded. See MERGED_PRS_SEARCH_QUERY for why this uses search.
 async function fetchRepoMergedPRs(owner, repo, since) {
-  // PRs created up to 14d before `since` could still have merged inside the window
+  // Matches the dashboard's original scope: only PRs created up to 14d before
+  // the window count, so long-lived PRs stay excluded as they always were.
   const createdSince = new Date(since.getTime() - 14 * 24 * 60 * 60 * 1000);
-  return paginateGraphQL(
-    MERGED_PRS_QUERY,
-    { owner, name: repo },
-    (data) => data.repository?.pullRequests,
-    (nodes, out) => {
-      for (const node of nodes) {
-        if (new Date(node.createdAt) < createdSince) return true; // hit boundary
-        if (node.mergedAt && new Date(node.mergedAt) >= since) {
-          out.push(normalizePRNode(node, repo));
-        }
-      }
-      return false;
-    },
-    { maxPages: 40 } // safety backstop (~1000 PRs/repo)
+  const day = (ms) => new Date(ms).toISOString().slice(0, 10);
+  const start = since.getTime();
+  const step = (Date.now() - start) / MERGED_FETCH_CHUNKS;
+  const ranges = Array.from(
+    { length: MERGED_FETCH_CHUNKS },
+    (_, i) => `${day(start + i * step)}..${day(start + (i + 1) * step)}`
   );
+
+  const chunks = await Promise.all(
+    ranges.map((range) =>
+      paginateGraphQL(
+        MERGED_PRS_SEARCH_QUERY,
+        { q: `repo:${owner}/${repo} is:pr is:merged merged:${range}`, name: repo },
+        (data) => data.search,
+        (nodes, out) => {
+          for (const node of nodes) {
+            if (
+              node.mergedAt &&
+              new Date(node.mergedAt) >= since &&
+              new Date(node.createdAt) >= createdSince
+            ) {
+              out.push(normalizePRNode(node, repo));
+            }
+          }
+          return false;
+        },
+        { maxPages: 20 }
+      )
+    )
+  );
+
+  // Date ranges are inclusive on both ends, so adjacent chunks share a day.
+  const byNumber = new Map();
+  for (const pr of chunks.flat()) byNumber.set(pr.number, pr);
+  return [...byNumber.values()];
 }
 
 // Same windowing approach as fetchRepoMergedPRs, but includes CLOSED
@@ -562,16 +627,33 @@ function enrichPRRecords(records) {
 
 // Detailed fetch over the 30-day data window (reviews + files). Powers the
 // summary KPIs, per-repo charts, and PR-size metric.
+// Stale-while-revalidate: once the cache is populated, an expired cache is
+// still served instantly while a refresh runs in the background — only the
+// very first load (empty cache) ever waits on GitHub.
 async function getSharedPRData() {
   const now = Date.now();
   if (prDataCache && now - prDataCacheTs < HIST_TTL) {
     console.log('[github] PR data cache hit');
     return prDataCache;
   }
+  if (prDataCache) {
+    if (!prDataFetching) {
+      console.log('[github] PR data stale — serving cache, refreshing in background');
+      refreshSharedPRData().catch((err) =>
+        console.warn(`[github] background PR data refresh failed: ${err.message}`)
+      );
+    }
+    return prDataCache;
+  }
   if (prDataFetching) {
     console.log('[github] PR data fetch in progress, waiting…');
     return prDataFetching;
   }
+  return refreshSharedPRData();
+}
+
+function refreshSharedPRData() {
+  if (prDataFetching) return prDataFetching;
 
   prDataFetching = (async () => {
     try {
@@ -736,16 +818,15 @@ function buildReposResult(prData) {
 async function getSummary(req, res, next) {
   try {
     const now = Date.now();
-    if (summaryCache && now - summaryCacheTs < HIST_TTL) {
+    const prData = await getSharedPRData();
+    if (summaryCache && summaryCacheTs === prDataCacheTs) {
       console.log('[github] summary cache hit');
       return res.json(summaryCache);
     }
-
-    const prData = await getSharedPRData();
     const result = buildSummaryResult(prData);
 
     summaryCache = result;
-    summaryCacheTs = now;
+    summaryCacheTs = prDataCacheTs;
 
     console.log(
       `[github] summary computed — ${prData.length} PRs, cycleTime P75=${result.cycleTime.p75}h, firstReview P75=${result.firstReview.p75}h`
@@ -760,16 +841,15 @@ async function getSummary(req, res, next) {
 async function getRepos(req, res, next) {
   try {
     const now = Date.now();
-    if (reposCache && now - reposCacheTs < HIST_TTL) {
+    const prData = await getSharedPRData();
+    if (reposCache && reposCacheTs === prDataCacheTs) {
       console.log('[github] repos cache hit');
       return res.json(reposCache);
     }
-
-    const prData = await getSharedPRData();
     const result = buildReposResult(prData);
 
     reposCache = result;
-    reposCacheTs = now;
+    reposCacheTs = prDataCacheTs;
 
     console.log(`[github] repos data computed — ${result.repos.length} repos`);
     res.json(result);
@@ -862,50 +942,69 @@ function mapResolvedPRRecords(records) {
   });
 }
 
+// Same stale-while-revalidate approach as getSharedPRData.
+let openPrsFetching = null;
+
 async function getOpenPRs(req, res, next) {
   try {
-    const now = Date.now();
-    if (openPrsCache && now - openPrsCacheTs < OPEN_TTL) {
-      console.log('[github] open-prs cache hit');
+    if (openPrsCache) {
+      if (Date.now() - openPrsCacheTs >= OPEN_TTL && !openPrsFetching) {
+        console.log('[github] open-prs stale — serving cache, refreshing in background');
+        refreshOpenPRs().catch((err) =>
+          console.warn(`[github] background open-prs refresh failed: ${err.message}`)
+        );
+      }
       return res.json(openPrsCache);
     }
-
-    const repos = githubConfig.repos;
-    const repoResults = await runWithConcurrency(
-      repos.map(
-        (repo) => () =>
-          withRepoRetry(repo, () => fetchRepoOpenPRs(config.github.org, repo))
-            .then((prs) => {
-              markRepoStatus(repo, 'open', true);
-              return prs;
-            })
-            .catch((err) => {
-              console.warn(
-                `[github] ${repo} open PRs fetch failed: ${err.message}`
-              );
-              markRepoStatus(repo, 'open', false);
-              return [];
-            })
-      ),
-      7
-    );
-
-    const records = await fillTruncatedFiles(repoResults.flat());
-    const allOpenPRs = mapOpenPRRecords(records, now);
-    allOpenPRs.sort((a, b) => b.elapsedHours - a.elapsedHours);
-
-    const result = { openPRs: allOpenPRs, fetchedAt: new Date().toISOString() };
-    openPrsCache = result;
-    openPrsCacheTs = now;
-
-    console.log(
-      `[github] open-prs fetched — ${allOpenPRs.length} open across all repos`
-    );
-    res.json(result);
+    res.json(await refreshOpenPRs());
   } catch (err) {
     console.error(`[github] getOpenPRs failed: ${err.message}`);
     next(err);
   }
+}
+
+function refreshOpenPRs() {
+  if (openPrsFetching) return openPrsFetching;
+  openPrsFetching = fetchOpenPRs().finally(() => {
+    openPrsFetching = null;
+  });
+  return openPrsFetching;
+}
+
+async function fetchOpenPRs() {
+  const now = Date.now();
+  const repos = githubConfig.repos;
+  const repoResults = await runWithConcurrency(
+    repos.map(
+      (repo) => () =>
+        withRepoRetry(repo, () => fetchRepoOpenPRs(config.github.org, repo))
+          .then((prs) => {
+            markRepoStatus(repo, 'open', true);
+            return prs;
+          })
+          .catch((err) => {
+            console.warn(
+              `[github] ${repo} open PRs fetch failed: ${err.message}`
+            );
+            markRepoStatus(repo, 'open', false);
+            return [];
+          })
+    ),
+    7
+  );
+
+  const records = await fillTruncatedFiles(repoResults.flat());
+  const allOpenPRs = mapOpenPRRecords(records, now);
+  allOpenPRs.sort((a, b) => b.elapsedHours - a.elapsedHours);
+
+  const result = { openPRs: allOpenPRs, fetchedAt: new Date().toISOString() };
+  openPrsCache = result;
+  openPrsCacheTs = now;
+
+  console.log(
+    `[github] open-prs fetched — ${allOpenPRs.length} open across all repos`
+  );
+  return result;
 }
 
 // On-demand dataset backing the PR Monitoring table's "show merged/closed"
@@ -997,11 +1096,11 @@ async function retryRepo(req, res, next) {
       prDataCacheTs = Date.now();
       if (summaryCache) {
         summaryCache = buildSummaryResult(prDataCache);
-        summaryCacheTs = Date.now();
+        summaryCacheTs = prDataCacheTs;
       }
       if (reposCache) {
         reposCache = buildReposResult(prDataCache);
-        reposCacheTs = Date.now();
+        reposCacheTs = prDataCacheTs;
       }
     } else if (mergedResult.status === 'rejected') {
       console.warn(
@@ -1057,7 +1156,7 @@ module.exports = {
 // Warm the cache on startup so the first page load is instant
 (async () => {
   try {
-    await getSharedPRData();
+    await Promise.all([getSharedPRData(), refreshOpenPRs()]);
     console.log('[github] startup cache warm complete');
   } catch (err) {
     console.warn('[github] startup cache warmup failed:', err.message);
