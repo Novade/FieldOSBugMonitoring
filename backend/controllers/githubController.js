@@ -627,22 +627,12 @@ function enrichPRRecords(records) {
 
 // Detailed fetch over the 30-day data window (reviews + files). Powers the
 // summary KPIs, per-repo charts, and PR-size metric.
-// Stale-while-revalidate: once the cache is populated, an expired cache is
-// still served instantly while a refresh runs in the background — only the
-// very first load (empty cache) ever waits on GitHub.
+// An expired cache is refetched before responding (rather than served stale)
+// so the page never shows data older than the TTL.
 async function getSharedPRData() {
   const now = Date.now();
   if (prDataCache && now - prDataCacheTs < HIST_TTL) {
     console.log('[github] PR data cache hit');
-    return prDataCache;
-  }
-  if (prDataCache) {
-    if (!prDataFetching) {
-      console.log('[github] PR data stale — serving cache, refreshing in background');
-      refreshSharedPRData().catch((err) =>
-        console.warn(`[github] background PR data refresh failed: ${err.message}`)
-      );
-    }
     return prDataCache;
   }
   if (prDataFetching) {
@@ -942,18 +932,12 @@ function mapResolvedPRRecords(records) {
   });
 }
 
-// Same stale-while-revalidate approach as getSharedPRData.
 let openPrsFetching = null;
 
 async function getOpenPRs(req, res, next) {
   try {
-    if (openPrsCache) {
-      if (Date.now() - openPrsCacheTs >= OPEN_TTL && !openPrsFetching) {
-        console.log('[github] open-prs stale — serving cache, refreshing in background');
-        refreshOpenPRs().catch((err) =>
-          console.warn(`[github] background open-prs refresh failed: ${err.message}`)
-        );
-      }
+    if (openPrsCache && Date.now() - openPrsCacheTs < OPEN_TTL) {
+      console.log('[github] open-prs cache hit');
       return res.json(openPrsCache);
     }
     res.json(await refreshOpenPRs());
