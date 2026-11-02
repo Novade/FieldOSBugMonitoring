@@ -655,9 +655,13 @@ function refreshSharedPRData() {
       const results = await runWithConcurrency(
         repos.map((repo) => () => {
           setProgress(repo, 'fetching');
+          // Oversized PRs' remaining files are fetched per repo, before the
+          // repo is marked done — so the progress list stays accurate and big
+          // PRs in smaller repos are filled while busier repos still load.
           return withRepoRetry(repo, () =>
             fetchRepoMergedPRs(config.github.org, repo, since)
           )
+            .then(fillTruncatedFiles)
             .then((prs) => {
               console.log(
                 `[github] ${repo}: ${prs.length} merged PRs in window`
@@ -679,8 +683,7 @@ function refreshSharedPRData() {
       );
       endProgress();
 
-      const records = await fillTruncatedFiles(results.flat());
-      prDataCache = enrichPRRecords(records);
+      prDataCache = enrichPRRecords(results.flat());
       prDataCacheTs = Date.now();
       return prDataCache;
     } finally {
