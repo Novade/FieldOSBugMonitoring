@@ -10,7 +10,7 @@
     "testCount": 11,
     "total": 28,
     "rate": 60.7,
-    "computedAt": "2026-11-02T07:27:28.086Z",
+    "computedAt": "2026-11-03T08:07:55.067Z",
     "createdBy": "Paul Emill Macalaguim",
     "updatedBy": "Paul Emill Macalaguim"
   },
@@ -25,7 +25,7 @@
     "testCount": 6,
     "total": 45,
     "rate": 86.7,
-    "computedAt": "2026-11-02T07:27:28.058Z",
+    "computedAt": "2026-11-03T08:07:55.009Z",
     "createdBy": "Paul Emill Macalaguim",
     "updatedBy": "Paul Emill Macalaguim"
   },
@@ -40,7 +40,7 @@
     "testCount": 14,
     "total": 34,
     "rate": 58.8,
-    "computedAt": "2026-11-02T07:27:28.087Z",
+    "computedAt": "2026-11-03T08:07:55.109Z",
     "createdBy": "Paul Emill Macalaguim",
     "updatedBy": "Paul Emill Macalaguim"
   },
@@ -51,11 +51,11 @@
     "testTo": "2026-11-03",
     "prodFrom": "2026-11-03",
     "prodTo": "2026-11-16",
-    "prodCount": 0,
-    "testCount": 5,
-    "total": 5,
-    "rate": 0,
-    "computedAt": "2026-11-02T07:27:28.247Z",
+    "prodCount": 1,
+    "testCount": 6,
+    "total": 7,
+    "rate": 14.3,
+    "computedAt": "2026-11-03T08:07:55.301Z",
     "createdBy": "Paul Emill Macalaguim",
     "updatedBy": "Paul Emill Macalaguim"
   }
