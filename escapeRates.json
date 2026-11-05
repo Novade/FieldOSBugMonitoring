@@ -65,12 +65,12 @@
     "testFrom": "2026-11-05",
     "testTo": "2026-11-16",
     "prodFrom": "2026-11-16",
-    "prodTo": "2026-11-16",
+    "prodTo": "2026-11-30",
     "prodCount": 0,
     "testCount": 0,
     "total": 0,
     "rate": null,
-    "computedAt": "2026-11-05T06:23:35.896Z",
+    "computedAt": "2026-11-05T06:24:41.831Z",
     "createdBy": "Paul Emill Macalaguim",
     "updatedBy": "Paul Emill Macalaguim"
   }
