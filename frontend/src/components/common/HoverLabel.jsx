@@ -44,7 +44,7 @@ export function useHoverLabel(label) {
           <span
             ref={tipRef}
             role="tooltip"
-            className="fixed z-[9999] w-max max-w-[320px] px-2 py-1 rounded bg-[#1a2332] text-white text-[11px] font-medium leading-snug whitespace-normal break-words pointer-events-none"
+            className="fixed z-[9999] w-max max-w-[320px] px-2 py-1 rounded bg-[#1a2332] border border-transparent dark:border-white/20 text-white text-[11px] font-medium leading-snug whitespace-normal break-words pointer-events-none"
             // Rendered hidden first so its size can be measured before placing it
             style={pos ? { left: pos.left, top: pos.top } : { left: 0, top: 0, visibility: 'hidden' }}
           >

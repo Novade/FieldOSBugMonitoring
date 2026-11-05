@@ -31,7 +31,7 @@ function makeTopValueLabelsPlugin(id, unit, decimals) {
         const text = `${value.toFixed(decimals)}${unit}`;
         ctx.save();
         ctx.font = '600 10px sans-serif';
-        ctx.fillStyle = '#4a5568';
+        ctx.fillStyle = ChartJS.defaults.color;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'bottom';
         ctx.fillText(text, bar.x, bar.y - 4);
@@ -110,13 +110,13 @@ export function PRRepoBarChart({ repos, metricKey, axisLabel, unit, decimals = 1
         beginAtZero: true,
         grace: '10%',
         ticks: { font: { size: 10 }, callback: (v) => `${v}${unit}` },
-        title: { display: true, text: axisLabel, font: { size: 11 }, color: '#8896b0' },
+        title: { display: true, text: axisLabel, font: { size: 11 } },
       },
     },
   };
 
   if (!repos?.length) {
-    return <div className="text-[#8896b0] text-sm py-8 text-center">No repo data available.</div>;
+    return <div className="text-ink-subtle text-sm py-8 text-center">No repo data available.</div>;
   }
 
   return (

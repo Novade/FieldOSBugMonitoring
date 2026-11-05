@@ -2,6 +2,86 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Theme tokens (RGB channels so Tailwind opacity modifiers work).
+   Light is the default; `html.dark` swaps the whole palette. */
+:root {
+  --c-surface: 255 255 255;
+  --c-canvas: 245 247 250;
+  --c-canvas-alt: 240 242 245;
+  --c-surface-strong: 226 229 234;
+  --c-brand-tint: 238 242 251;
+  --c-ink: 26 35 50;
+  --c-ink-soft: 74 85 104;
+  --c-ink-muted: 107 122 153;
+  --c-ink-subtle: 136 150 176;
+  --c-ink-faint: 160 170 184;
+  --c-line: 221 226 234;
+  --c-line-soft: 238 240 244;
+  --c-danger: 192 57 43;
+  --c-danger-ink: 155 28 28;
+  --c-danger-tint: 253 232 232;
+  --c-danger-line: 243 198 198;
+  --c-warning: 217 119 6;
+  --c-warning-ink: 146 64 14;
+  --c-warning-tint: 254 243 199;
+  --c-warning-line: 252 211 77;
+  --c-success: 46 125 94;
+  --c-success-ink: 22 101 52;
+  --c-success-tint: 228 244 237;
+  --c-accent: 92 79 163;
+  --c-accent-tint: 238 240 252;
+  color-scheme: light;
+}
+
+html.dark {
+  --c-surface: 30 36 48;
+  --c-canvas: 20 24 33;
+  --c-canvas-alt: 38 45 59;
+  --c-surface-strong: 52 60 77;
+  --c-brand-tint: 36 50 78;
+  --c-ink: 230 234 242;
+  --c-ink-soft: 196 204 218;
+  --c-ink-muted: 184 194 212;
+  --c-ink-subtle: 164 176 198;
+  --c-ink-faint: 140 152 175;
+  --c-line: 55 64 82;
+  --c-line-soft: 43 51 66;
+  --c-danger: 241 132 122;
+  --c-danger-ink: 252 165 165;
+  --c-danger-tint: 74 32 36;
+  --c-danger-line: 120 50 55;
+  --c-warning: 245 180 90;
+  --c-warning-ink: 252 211 77;
+  --c-warning-tint: 70 52 22;
+  --c-warning-line: 120 90 30;
+  --c-success: 111 207 159;
+  --c-success-ink: 134 239 172;
+  --c-success-tint: 24 64 48;
+  --c-accent: 180 168 245;
+  --c-accent-tint: 50 44 90;
+  color-scheme: dark;
+}
+
+body {
+  background: rgb(var(--c-canvas));
+  color: rgb(var(--c-ink));
+}
+
+@layer base {
+  *, ::before, ::after {
+    border-color: rgb(var(--c-line));
+  }
+}
+
 * {
   box-sizing: border-box;
+}
+
+/* Brand blue is too dark to read as text on dark surfaces */
+html.dark .text-brand,
+html.dark .hover\:text-brand:hover {
+  color: #8fb3ec;
+}
+html.dark .text-brand-dark {
+  color: #a9c4f0;
 }

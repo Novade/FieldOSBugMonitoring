@@ -23,15 +23,15 @@ export function Modal({ open, title, onClose, busy = false, footer, children, wi
       <div
         role="dialog"
         aria-modal="true"
-        className={`w-full ${width} bg-white rounded-lg border border-[#dde2ea] shadow-lg`}
+        className={`w-full ${width} bg-surface rounded-lg border border-line shadow-lg`}
       >
-        <div className="flex items-center justify-between px-[18px] py-[14px] border-b border-[#eef0f4]">
-          <div className="text-[16px] font-semibold text-[#1a2332]">{title}</div>
+        <div className="flex items-center justify-between px-[18px] py-[14px] border-b border-line-soft">
+          <div className="text-[16px] font-semibold text-ink">{title}</div>
           <button
             type="button"
             onClick={onClose}
             disabled={busy}
-            className="p-1 rounded-md text-[#8896b0] hover:bg-[#f0f2f5] hover:text-[#1a2332] disabled:opacity-40"
+            className="p-1 rounded-md text-ink-subtle hover:bg-canvas-alt hover:text-ink disabled:opacity-40"
             aria-label="Close"
           >
             <X size={16} />
@@ -39,7 +39,7 @@ export function Modal({ open, title, onClose, busy = false, footer, children, wi
         </div>
         <div className="px-[18px] py-4">{children}</div>
         {footer && (
-          <div className="flex justify-end gap-2 px-[18px] py-3 border-t border-[#eef0f4] bg-[#f5f7fa] rounded-b-lg">
+          <div className="flex justify-end gap-2 px-[18px] py-3 border-t border-line-soft bg-canvas rounded-b-lg">
             {footer}
           </div>
         )}

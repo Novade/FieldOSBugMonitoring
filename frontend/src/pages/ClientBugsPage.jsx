@@ -69,7 +69,7 @@ export function ClientBugsPage() {
 
       {/* Workspace selector */}
       <div className="flex flex-col items-center mb-8">
-        <p className="text-[13px] font-medium text-[#6b7a99] mb-2">
+        <p className="text-[13px] font-medium text-ink-muted mb-2">
           Select Workspace
         </p>
         <div ref={containerRef} className="relative w-80">
@@ -83,21 +83,21 @@ export function ClientBugsPage() {
               setOpen(true);
             }}
             onFocus={() => setOpen(true)}
-            className="w-full px-4 py-2 pr-8 text-[14px] rounded-lg border border-[#d1d9e6] shadow-sm focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand text-[#1a1a2e] bg-white"
+            className="w-full px-4 py-2 pr-8 text-[14px] rounded-lg border border-line shadow-sm focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand text-ink bg-surface"
           />
           {search && (
             <button
               type="button"
               aria-label="Clear workspace selection"
               onMouseDown={handleClear}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#6b7a99] hover:text-[#1a1a2e] text-[16px] leading-none"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-muted hover:text-ink text-[16px] leading-none"
               tabIndex={-1}
             >
               ×
             </button>
           )}
           {open && filtered.length > 0 && (
-            <ul className="absolute z-10 w-full mt-1 max-h-60 overflow-y-auto bg-white border border-[#d1d9e6] rounded-lg shadow-md">
+            <ul className="absolute z-10 w-full mt-1 max-h-60 overflow-y-auto bg-surface border border-line rounded-lg shadow-md">
               {filtered.map((name) => (
                 <li
                   key={name}
@@ -111,10 +111,10 @@ export function ClientBugsPage() {
                       handleSelect(name);
                     }
                   }}
-                  className={`px-4 py-2 text-[14px] cursor-pointer hover:bg-[#f0f4ff] ${
+                  className={`px-4 py-2 text-[14px] cursor-pointer hover:bg-brand-tint ${
                     selected === name
                       ? 'text-brand font-medium'
-                      : 'text-[#1a1a2e]'
+                      : 'text-ink'
                   }`}
                 >
                   {name}
@@ -123,7 +123,7 @@ export function ClientBugsPage() {
             </ul>
           )}
           {open && filtered.length === 0 && search && (
-            <div className="absolute z-10 w-full mt-1 bg-white border border-[#d1d9e6] rounded-lg shadow-md px-4 py-3 text-[13px] text-[#6b7a99]">
+            <div className="absolute z-10 w-full mt-1 bg-surface border border-line rounded-lg shadow-md px-4 py-3 text-[13px] text-ink-muted">
               No workspaces found
             </div>
           )}
@@ -132,9 +132,9 @@ export function ClientBugsPage() {
 
       {/* Workspace-specific dashboard */}
       <div ref={workspaceSectionRef}>
-        <p className="text-[15px] font-semibold text-[#1a2332] mb-4">
+        <p className="text-[15px] font-semibold text-ink mb-4">
           {selected || (
-            <span className="text-[#6b7a99] font-normal">
+            <span className="text-ink-muted font-normal">
               No workspace selected
             </span>
           )}

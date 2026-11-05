@@ -57,7 +57,7 @@ export function TopWorkspacesByOpenChart({ issues, onSelectWorkspace }) {
   if (labels.length === 0) {
     return (
       <div className="flex items-center justify-center h-full min-h-[160px]">
-        <p className="text-[13px] text-[#2e7d5e] font-medium">No open bugs — all clear!</p>
+        <p className="text-[13px] text-success font-medium">No open bugs — all clear!</p>
       </div>
     );
   }

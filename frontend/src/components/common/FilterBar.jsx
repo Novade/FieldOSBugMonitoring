@@ -27,11 +27,11 @@ function FilterPanel({ open, onClose, fields, filters, onFilterChange, fieldOpti
   return (
     <div
       ref={ref}
-      className="absolute top-full left-0 mt-1 z-50 bg-white border border-[#dde2ea] rounded-lg shadow-lg flex"
+      className="absolute top-full left-0 mt-1 z-50 bg-surface border border-line rounded-lg shadow-lg flex"
       style={{ width: 380, height: 280 }}
     >
       {/* Left column */}
-      <div className="w-44 border-r border-[#dde2ea] py-2 shrink-0 overflow-y-auto">
+      <div className="w-44 border-r border-line py-2 shrink-0 overflow-y-auto">
         {fields.map((f) => {
           const count = filters[f.key]?.length ?? 0;
           const isActive = activeField === f.key;
@@ -41,8 +41,8 @@ function FilterPanel({ open, onClose, fields, filters, onFilterChange, fieldOpti
               onClick={() => setActiveField(f.key)}
               className={`w-full text-left px-4 py-2 text-[13px] flex items-center justify-between transition-colors
                 ${isActive
-                  ? 'bg-[#eef2fb] text-brand font-semibold border-l-2 border-brand'
-                  : 'text-[#1a2332] hover:bg-[#f5f7fa] border-l-2 border-transparent'
+                  ? 'bg-brand-tint text-brand font-semibold border-l-2 border-brand'
+                  : 'text-ink hover:bg-canvas border-l-2 border-transparent'
                 }`}
             >
               {f.label}
@@ -52,7 +52,7 @@ function FilterPanel({ open, onClose, fields, filters, onFilterChange, fieldOpti
             </button>
           );
         })}
-        {booleanFilters.length > 0 && <div className="my-1 mx-2 border-t border-[#dde2ea]" />}
+        {booleanFilters.length > 0 && <div className="my-1 mx-2 border-t border-line" />}
         {booleanFilters.map((f) => {
           const active = !!filters[f.key];
           return (
@@ -61,8 +61,8 @@ function FilterPanel({ open, onClose, fields, filters, onFilterChange, fieldOpti
               onClick={() => onFilterChange(f.key, !filters[f.key])}
               className={`w-full text-left px-4 py-2 text-[13px] flex items-center justify-between transition-colors
                 ${active
-                  ? 'bg-[#eef2fb] text-brand font-semibold'
-                  : 'text-[#1a2332] hover:bg-[#f5f7fa]'
+                  ? 'bg-brand-tint text-brand font-semibold'
+                  : 'text-ink hover:bg-canvas'
                 }`}
             >
               {f.label}
@@ -75,7 +75,7 @@ function FilterPanel({ open, onClose, fields, filters, onFilterChange, fieldOpti
       {/* Right column */}
       <div className="flex-1 py-2 px-3 overflow-y-auto">
         {!activeField ? (
-          <p className="text-[13px] text-[#8896b0] mt-4 px-1">
+          <p className="text-[13px] text-ink-subtle mt-4 px-1">
             Select a field to start creating a filter.
           </p>
         ) : (
@@ -87,7 +87,7 @@ function FilterPanel({ open, onClose, fields, filters, onFilterChange, fieldOpti
                 <label
                   key={opt}
                   className={`flex items-center gap-2 px-1 py-1.5 rounded text-[13px] select-none
-                    ${isLocked ? 'text-[#8896b0] cursor-not-allowed' : 'text-[#1a2332] hover:bg-[#f5f7fa] cursor-pointer'}`}
+                    ${isLocked ? 'text-ink-subtle cursor-not-allowed' : 'text-ink hover:bg-canvas cursor-pointer'}`}
                 >
                   <input
                     type="checkbox"
@@ -132,7 +132,7 @@ export function FilterBar({
     booleanFilters.reduce((sum, f) => sum + (filters[f.key] ? 1 : 0), 0);
 
   const inputClass =
-    'h-[34px] px-[10px] border border-[#dde2ea] rounded-md text-[13px] bg-white text-[#1a2332] outline-none transition-colors focus:border-brand';
+    'h-[34px] px-[10px] border border-line rounded-md text-[13px] bg-surface text-ink outline-none transition-colors focus:border-brand';
 
   return (
     <div className="flex flex-wrap gap-2 items-center">
@@ -149,8 +149,8 @@ export function FilterBar({
       <div className="relative">
         <button
           onClick={() => setOpen((o) => !o)}
-          className={`h-[34px] px-[10px] border rounded-md text-[13px] flex items-center gap-2 bg-white transition-colors
-            ${activeCount > 0 || open ? 'border-brand text-brand' : 'border-[#dde2ea] text-[#1a2332] hover:border-brand'}`}
+          className={`h-[34px] px-[10px] border rounded-md text-[13px] flex items-center gap-2 bg-surface transition-colors
+            ${activeCount > 0 || open ? 'border-brand text-brand' : 'border-line text-ink hover:border-brand'}`}
         >
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="shrink-0">
             <path d="M2 4h12M4 8h8M6 12h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
@@ -177,7 +177,7 @@ export function FilterBar({
 
       <button
         onClick={onClear}
-        className="text-[12px] text-brand cursor-pointer bg-none border-none px-2 py-1 rounded font-medium hover:bg-[#eef2fb] transition-colors"
+        className="text-[12px] text-brand cursor-pointer bg-none border-none px-2 py-1 rounded font-medium hover:bg-brand-tint transition-colors"
       >
         Clear filters
       </button>

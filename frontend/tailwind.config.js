@@ -1,11 +1,37 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: ['./index.html', './src/**/*.{js,jsx}'],
   theme: {
     extend: {
       colors: {
         brand: '#3b6cb7',
         'brand-dark': '#2d5a9e',
+        'surface': 'rgb(var(--c-surface) / <alpha-value>)',
+        'canvas': 'rgb(var(--c-canvas) / <alpha-value>)',
+        'canvas-alt': 'rgb(var(--c-canvas-alt) / <alpha-value>)',
+        'surface-strong': 'rgb(var(--c-surface-strong) / <alpha-value>)',
+        'brand-tint': 'rgb(var(--c-brand-tint) / <alpha-value>)',
+        'ink': 'rgb(var(--c-ink) / <alpha-value>)',
+        'ink-soft': 'rgb(var(--c-ink-soft) / <alpha-value>)',
+        'ink-muted': 'rgb(var(--c-ink-muted) / <alpha-value>)',
+        'ink-subtle': 'rgb(var(--c-ink-subtle) / <alpha-value>)',
+        'ink-faint': 'rgb(var(--c-ink-faint) / <alpha-value>)',
+        'line': 'rgb(var(--c-line) / <alpha-value>)',
+        'danger': 'rgb(var(--c-danger) / <alpha-value>)',
+        'danger-ink': 'rgb(var(--c-danger-ink) / <alpha-value>)',
+        'danger-tint': 'rgb(var(--c-danger-tint) / <alpha-value>)',
+        'danger-line': 'rgb(var(--c-danger-line) / <alpha-value>)',
+        'warning': 'rgb(var(--c-warning) / <alpha-value>)',
+        'warning-ink': 'rgb(var(--c-warning-ink) / <alpha-value>)',
+        'warning-tint': 'rgb(var(--c-warning-tint) / <alpha-value>)',
+        'warning-line': 'rgb(var(--c-warning-line) / <alpha-value>)',
+        'success': 'rgb(var(--c-success) / <alpha-value>)',
+        'success-ink': 'rgb(var(--c-success-ink) / <alpha-value>)',
+        'success-tint': 'rgb(var(--c-success-tint) / <alpha-value>)',
+        'accent': 'rgb(var(--c-accent) / <alpha-value>)',
+        'accent-tint': 'rgb(var(--c-accent-tint) / <alpha-value>)',
+        'line-soft': 'rgb(var(--c-line-soft) / <alpha-value>)',
       },
       fontFamily: {
         sans: ['-apple-system', 'BlinkMacSystemFont', "'Segoe UI'", 'Roboto', 'sans-serif'],

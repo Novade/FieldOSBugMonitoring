@@ -173,7 +173,7 @@ export function BacklogTable({ issues, drill, onClearDrill, showWorkspace = fals
 
   function thClass(col) {
     const base =
-      'text-left px-3.5 py-2.5 font-semibold text-[11px] text-[#8896b0] bg-[#f5f7fa] border-b border-[#dde2ea] uppercase tracking-[.5px] whitespace-nowrap cursor-pointer select-none hover:text-brand hover:bg-[#eef2fb]';
+      'text-left px-3.5 py-2.5 font-semibold text-[11px] text-ink-subtle bg-canvas border-b border-line uppercase tracking-[.5px] whitespace-nowrap cursor-pointer select-none hover:text-brand hover:bg-brand-tint';
     if (sortCol === col)
       return `${base} text-brand${
         sortDir === 1 ? " after:content-['_↑']" : " after:content-['_↓']"
@@ -193,18 +193,18 @@ export function BacklogTable({ issues, drill, onClearDrill, showWorkspace = fals
         onClear={handleClear}
         lockedField={lockedField}
       />
-      <div className="text-[12px] text-[#8896b0] mb-2">
+      <div className="text-[12px] text-ink-subtle mb-2">
         Showing {displayed.length} of {issues.length} issues
       </div>
-      <div className="border border-[#dde2ea] rounded-lg overflow-hidden">
+      <div className="border border-line rounded-lg overflow-hidden">
         <div className="max-h-[520px] overflow-y-auto">
           <table className="w-full border-collapse text-[13px]">
             <thead className="sticky top-0 z-10">
               <tr>
-                <th className="text-left px-3.5 py-2.5 font-semibold text-[11px] text-[#8896b0] bg-[#f5f7fa] border-b border-[#dde2ea] uppercase tracking-[.5px] whitespace-nowrap">
+                <th className="text-left px-3.5 py-2.5 font-semibold text-[11px] text-ink-subtle bg-canvas border-b border-line uppercase tracking-[.5px] whitespace-nowrap">
                   Key
                 </th>
-                <th className="text-left px-3.5 py-2.5 font-semibold text-[11px] text-[#8896b0] bg-[#f5f7fa] border-b border-[#dde2ea] uppercase tracking-[.5px] whitespace-nowrap">
+                <th className="text-left px-3.5 py-2.5 font-semibold text-[11px] text-ink-subtle bg-canvas border-b border-line uppercase tracking-[.5px] whitespace-nowrap">
                   Summary
                 </th>
                 <th onClick={() => toggleSort('st')} className={thClass('st')}>
@@ -221,24 +221,24 @@ export function BacklogTable({ issues, drill, onClearDrill, showWorkspace = fals
                     Workspace
                   </th>
                 )}
-                <th className="text-left px-3.5 py-2.5 font-semibold text-[11px] text-[#8896b0] bg-[#f5f7fa] border-b border-[#dde2ea] uppercase tracking-[.5px] whitespace-nowrap">
+                <th className="text-left px-3.5 py-2.5 font-semibold text-[11px] text-ink-subtle bg-canvas border-b border-line uppercase tracking-[.5px] whitespace-nowrap">
                   Created
                 </th>
-                <th className="text-left px-3.5 py-2.5 font-semibold text-[11px] text-[#8896b0] bg-[#f5f7fa] border-b border-[#dde2ea] uppercase tracking-[.5px] whitespace-nowrap">
+                <th className="text-left px-3.5 py-2.5 font-semibold text-[11px] text-ink-subtle bg-canvas border-b border-line uppercase tracking-[.5px] whitespace-nowrap">
                   Resolved
                 </th>
-                <th className="text-left px-3.5 py-2.5 font-semibold text-[11px] text-[#8896b0] bg-[#f5f7fa] border-b border-[#dde2ea] uppercase tracking-[.5px] whitespace-nowrap">
+                <th className="text-left px-3.5 py-2.5 font-semibold text-[11px] text-ink-subtle bg-canvas border-b border-line uppercase tracking-[.5px] whitespace-nowrap">
                   Deployed
                 </th>
               </tr>
             </thead>
             <tbody>
               {displayed.map((b, idx) => (
-                <tr key={b.k} className="hover:bg-[#f8faff]">
+                <tr key={b.k} className="hover:bg-canvas">
                   <td
                     className={`px-3.5 py-[9px] ${
                       idx < displayed.length - 1
-                        ? 'border-b border-[#eef0f4]'
+                        ? 'border-b border-line-soft'
                         : ''
                     }`}
                   >
@@ -249,7 +249,7 @@ export function BacklogTable({ issues, drill, onClearDrill, showWorkspace = fals
                       title={isQaBug(b) ? 'QA-BUG (found in staging)' : undefined}
                       className={`font-semibold font-mono text-[11.5px] hover:underline ${
                         isQaBug(b)
-                          ? 'text-[#b45309] bg-[#fef3c7] px-1.5 py-0.5 rounded'
+                          ? 'text-warning-ink bg-warning-tint dark:bg-amber-500/25 dark:text-amber-300 dark:ring-1 dark:ring-amber-400/50 px-1.5 py-0.5 rounded'
                           : 'text-brand'
                       }`}
                     >
@@ -259,7 +259,7 @@ export function BacklogTable({ issues, drill, onClearDrill, showWorkspace = fals
                   <td
                     className={`px-3.5 py-[9px] max-w-[280px] truncate ${
                       idx < displayed.length - 1
-                        ? 'border-b border-[#eef0f4]'
+                        ? 'border-b border-line-soft'
                         : ''
                     }`}
                   >
@@ -268,7 +268,7 @@ export function BacklogTable({ issues, drill, onClearDrill, showWorkspace = fals
                   <td
                     className={`px-3.5 py-[9px] ${
                       idx < displayed.length - 1
-                        ? 'border-b border-[#eef0f4]'
+                        ? 'border-b border-line-soft'
                         : ''
                     }`}
                   >
@@ -277,16 +277,16 @@ export function BacklogTable({ issues, drill, onClearDrill, showWorkspace = fals
                   <td
                     className={`px-3.5 py-[9px] ${
                       idx < displayed.length - 1
-                        ? 'border-b border-[#eef0f4]'
+                        ? 'border-b border-line-soft'
                         : ''
                     }`}
                   >
                     <PriorityPill priority={b.p} />
                   </td>
                   <td
-                    className={`px-3.5 py-[9px] whitespace-nowrap text-[12px] text-[#5a6075] ${
+                    className={`px-3.5 py-[9px] whitespace-nowrap text-[12px] text-ink-soft ${
                       idx < displayed.length - 1
-                        ? 'border-b border-[#eef0f4]'
+                        ? 'border-b border-line-soft'
                         : ''
                     }`}
                   >
@@ -294,9 +294,9 @@ export function BacklogTable({ issues, drill, onClearDrill, showWorkspace = fals
                   </td>
                   {showWorkspace && (
                     <td
-                      className={`px-3.5 py-[9px] max-w-[180px] truncate text-[12px] text-[#5a6075] ${
+                      className={`px-3.5 py-[9px] max-w-[180px] truncate text-[12px] text-ink-soft ${
                         idx < displayed.length - 1
-                          ? 'border-b border-[#eef0f4]'
+                          ? 'border-b border-line-soft'
                           : ''
                       }`}
                     >
@@ -306,27 +306,27 @@ export function BacklogTable({ issues, drill, onClearDrill, showWorkspace = fals
                     </td>
                   )}
                   <td
-                    className={`px-3.5 py-[9px] whitespace-nowrap text-[12px] text-[#9aa0b4] ${
+                    className={`px-3.5 py-[9px] whitespace-nowrap text-[12px] text-ink-faint ${
                       idx < displayed.length - 1
-                        ? 'border-b border-[#eef0f4]'
+                        ? 'border-b border-line-soft'
                         : ''
                     }`}
                   >
                     {b.c || '-'}
                   </td>
                   <td
-                    className={`px-3.5 py-[9px] whitespace-nowrap text-[12px] text-[#9aa0b4] ${
+                    className={`px-3.5 py-[9px] whitespace-nowrap text-[12px] text-ink-faint ${
                       idx < displayed.length - 1
-                        ? 'border-b border-[#eef0f4]'
+                        ? 'border-b border-line-soft'
                         : ''
                     }`}
                   >
                     {b.r || '-'}
                   </td>
                   <td
-                    className={`px-3.5 py-[9px] whitespace-nowrap text-[12px] text-[#9aa0b4] ${
+                    className={`px-3.5 py-[9px] whitespace-nowrap text-[12px] text-ink-faint ${
                       idx < displayed.length - 1
-                        ? 'border-b border-[#eef0f4]'
+                        ? 'border-b border-line-soft'
                         : ''
                     }`}
                   >
@@ -338,7 +338,7 @@ export function BacklogTable({ issues, drill, onClearDrill, showWorkspace = fals
                 <tr>
                   <td
                     colSpan={showWorkspace ? 9 : 8}
-                    className="px-3.5 py-8 text-center text-[13px] text-[#8896b0]"
+                    className="px-3.5 py-8 text-center text-[13px] text-ink-subtle"
                   >
                     No issues match your filters.
                   </td>

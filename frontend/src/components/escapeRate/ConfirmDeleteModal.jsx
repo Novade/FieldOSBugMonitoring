@@ -41,7 +41,7 @@ export function ConfirmDeleteModal({ entry, onClose, onConfirm }) {
       }
     >
       <Banner message={error} visible={!!error} />
-      <p className="text-[13px] text-[#5a6075]">This removes the entry from the Escape Rate table. Jira bugs are not affected.</p>
+      <p className="text-[13px] text-ink-soft">This removes the entry from the Escape Rate table. Jira bugs are not affected.</p>
     </Modal>
   );
 }

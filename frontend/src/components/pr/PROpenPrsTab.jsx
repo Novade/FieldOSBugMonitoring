@@ -65,11 +65,11 @@ const BASE_COLUMNS = [
 
 function StatusPill({ status }) {
   const styles = {
-    Breached: 'bg-[#fde8e8] text-[#c0392b]',
-    'At Risk': 'bg-[#fef3e2] text-[#d97706]',
-    'On Track': 'bg-[#e4f4ed] text-[#2e7d5e]',
-    Merged: 'bg-[#eef0fc] text-[#5c4fa3]',
-    Closed: 'bg-[#f0f2f5] text-[#6b7a99]',
+    Breached: 'bg-danger-tint text-danger',
+    'At Risk': 'bg-warning-tint text-warning',
+    'On Track': 'bg-success-tint text-success',
+    Merged: 'bg-accent-tint text-accent',
+    Closed: 'bg-canvas-alt text-ink-muted',
   };
   return (
     <span
@@ -130,7 +130,7 @@ function PhaseLabel({ phase, ciStatus, hasConflict }) {
 const REVIEWER_STATES = {
   APPROVED: { Icon: Check, color: '#2e7d5e', label: 'Approved' },
   CHANGES_REQUESTED: { Icon: FileDiff, color: '#c0392b', label: 'Changes requested' },
-  COMMENTED: { Icon: MessageSquare, color: '#6b7a99', label: 'Commented' },
+  COMMENTED: { Icon: MessageSquare, color: 'rgb(var(--c-ink-muted))', label: 'Commented' },
   PENDING: { Icon: Circle, color: '#d97706', label: 'Review pending', filled: true },
 };
 
@@ -144,7 +144,7 @@ function ReviewerList({ reviewers }) {
           <HoverLabel
             key={login}
             label={`${login}: ${s.label}`}
-            className="inline-flex items-center gap-1 text-[11px] text-[#6b7a99] whitespace-nowrap"
+            className="inline-flex items-center gap-1 text-[11px] text-ink-muted whitespace-nowrap"
           >
             <StateIcon state={s} />
             {login}
@@ -164,10 +164,10 @@ function StatCard({ label, value, accent }) {
   };
   return (
     <div
-      className={`bg-white rounded-lg border border-[#dde2ea] px-4 py-[14px] flex-1 min-w-[140px] border-t-[3px] ${accentColors[accent] || accentColors.blue}`}
+      className={`bg-surface rounded-lg border border-line px-4 py-[14px] flex-1 min-w-[140px] border-t-[3px] ${accentColors[accent] || accentColors.blue}`}
     >
-      <div className="text-[12px] font-semibold uppercase tracking-[.5px] mb-3 text-[#6b7a99]">{label}</div>
-      <div className="text-[28px] font-bold text-[#1a2332]">{value ?? '—'}</div>
+      <div className="text-[12px] font-semibold uppercase tracking-[.5px] mb-3 text-ink-muted">{label}</div>
+      <div className="text-[28px] font-bold text-ink">{value ?? '—'}</div>
     </div>
   );
 }
@@ -279,7 +279,7 @@ export function PROpenPrsTab({ openPrs }) {
   }
 
   if (!openPrs) {
-    return <div className="text-[#8896b0] text-sm py-8 text-center">Loading open PRs…</div>;
+    return <div className="text-ink-subtle text-sm py-8 text-center">Loading open PRs…</div>;
   }
 
   return (
@@ -297,7 +297,7 @@ export function PROpenPrsTab({ openPrs }) {
 
         <div className="flex gap-4">
           {LEGEND_ITEMS.map((item) => (
-            <div key={item.label} className="flex items-center gap-1.5 text-[12px] text-[#6b7a99]">
+            <div key={item.label} className="flex items-center gap-1.5 text-[12px] text-ink-muted">
               <span className="inline-block w-3 h-3 rounded-[2px]" style={{ backgroundColor: item.color }} />
               {item.label}
             </div>
@@ -306,14 +306,14 @@ export function PROpenPrsTab({ openPrs }) {
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <label className="flex items-center gap-1.5 text-[13px] text-[#4a5568] cursor-pointer select-none">
+        <label className="flex items-center gap-1.5 text-[13px] text-ink-soft cursor-pointer select-none">
           <input type="checkbox" checked={showResolved} onChange={handleToggleResolved} />
           Show merged/closed (last 30 days)
         </label>
-        {resolvedLoading && <span className="text-[12px] text-[#8896b0]">Loading…</span>}
-        {resolvedError && <span className="text-[12px] text-[#c0392b]">{resolvedError}</span>}
+        {resolvedLoading && <span className="text-[12px] text-ink-subtle">Loading…</span>}
+        {resolvedError && <span className="text-[12px] text-danger">{resolvedError}</span>}
         {!resolvedError && resolvedFailedRepos.length > 0 && (
-          <span className="text-[12px] text-[#c0392b]">
+          <span className="text-[12px] text-danger">
             Couldn't load merged/closed PRs for: {resolvedFailedRepos.join(', ')}
           </span>
         )}
@@ -327,9 +327,9 @@ export function PROpenPrsTab({ openPrs }) {
       </div>
 
       {sortedPrs.length === 0 ? (
-        <div className="text-[#8896b0] text-sm py-6 text-center">No PRs match the current filters.</div>
+        <div className="text-ink-subtle text-sm py-6 text-center">No PRs match the current filters.</div>
       ) : (
-        <div className="border border-[#dde2ea] rounded-lg overflow-hidden">
+        <div className="border border-line rounded-lg overflow-hidden">
           <div className="max-h-[520px] overflow-y-auto overflow-x-hidden" style={{ scrollbarGutter: 'stable' }}>
           <table className="w-full table-fixed text-[12px]">
             <colgroup>
@@ -337,26 +337,26 @@ export function PROpenPrsTab({ openPrs }) {
                 <col key={col.key} style={{ width: col.width }} />
               ))}
             </colgroup>
-            <thead className="sticky top-0 z-10 bg-[#f5f7fa]">
-              <tr className="bg-[#f5f7fa] border-b border-[#dde2ea]">
+            <thead className="sticky top-0 z-10 bg-canvas">
+              <tr className="bg-canvas border-b border-line">
                 {BASE_COLUMNS.map((col) => {
                   const active = sortKey === col.key;
                   return (
                     <th
                       key={col.key}
                       onClick={() => handleSort(col.key)}
-                      className={`${col.align === 'center' ? 'text-center' : 'text-left'} px-3 py-2 font-semibold text-[#6b7a99] text-[11px] uppercase tracking-[.4px] cursor-pointer select-none hover:text-[#3b6cb7] truncate`}
+                      className={`${col.align === 'center' ? 'text-center' : 'text-left'} px-3 py-2 font-semibold text-ink-muted text-[11px] uppercase tracking-[.4px] cursor-pointer select-none hover:text-brand truncate`}
                     >
                       <span className="inline-flex items-center gap-1">
                         {col.label}
                         {active ? (
                           sortDir === 'asc' ? (
-                            <ChevronUp size={13} className="text-[#3b6cb7]" />
+                            <ChevronUp size={13} className="text-brand" />
                           ) : (
-                            <ChevronDown size={13} className="text-[#3b6cb7]" />
+                            <ChevronDown size={13} className="text-brand" />
                           )
                         ) : (
-                          <ChevronsUpDown size={13} className="text-[#c2cbda]" />
+                          <ChevronsUpDown size={13} className="text-ink-faint" />
                         )}
                       </span>
                     </th>
@@ -368,39 +368,39 @@ export function PROpenPrsTab({ openPrs }) {
               {sortedPrs.map((pr, i) => (
                 <tr
                   key={`${pr.repo}-${pr.number}`}
-                  className={`border-b border-[#dde2ea] hover:bg-[#f9fafc] transition-colors ${
-                    i % 2 === 0 ? '' : 'bg-[#fafbfc]'
+                  className={`border-b border-line hover:bg-canvas transition-colors ${
+                    i % 2 === 0 ? '' : 'bg-canvas'
                   }`}
                 >
-                  <td className="px-3 py-2 text-[#1a2332] overflow-hidden">
+                  <td className="px-3 py-2 text-ink overflow-hidden">
                     <HoverLabel as="div" className="truncate" label={`#${pr.number} - ${pr.title}`}>
                       <a
                         href={pr.url}
                         target="_blank"
                         rel="noreferrer"
-                        className="hover:text-[#3b6cb7] hover:underline"
+                        className="hover:text-brand hover:underline"
                       >
                         #{pr.number} - {pr.title}
                       </a>
                     </HoverLabel>
                     <ReviewerList reviewers={pr.reviewers} />
                   </td>
-                  <td className="px-3 py-2 text-[#6b7a99] truncate">
+                  <td className="px-3 py-2 text-ink-muted truncate">
                     <HoverLabel as="div" className="truncate" label={pr.author}>{pr.author}</HoverLabel>
                   </td>
                   <td className="px-3 py-2 overflow-hidden">
                     <HoverLabel as="div" label={`${pr.repo}${pr.branch ? ' / ' + pr.branch : ''}`}>
-                      <div className="text-[#6b7a99] truncate">{pr.repo}</div>
-                      {pr.branch && <div className="text-[10px] text-[#8896b0] truncate">{pr.branch}</div>}
+                      <div className="text-ink-muted truncate">{pr.repo}</div>
+                      {pr.branch && <div className="text-[10px] text-ink-subtle truncate">{pr.branch}</div>}
                     </HoverLabel>
                   </td>
-                  <td className="px-3 py-2 text-[#1a2332] truncate font-medium">
+                  <td className="px-3 py-2 text-ink truncate font-medium">
                     {pr.elapsedHours != null ? formatHoursShort(pr.elapsedHours) : '—'}
                   </td>
-                  <td className="px-3 py-2 text-[#6b7a99] truncate">
-                    <span className="text-[#2e7d5e]">+{pr.additions}</span>
+                  <td className="px-3 py-2 text-ink-muted truncate">
+                    <span className="text-success">+{pr.additions}</span>
                     {' '}
-                    <span className="text-[#c0392b]">-{pr.deletions}</span>
+                    <span className="text-danger">-{pr.deletions}</span>
                   </td>
                   <td className="px-3 py-2 overflow-hidden text-center">
                     <StatusPill status={pr.status} />

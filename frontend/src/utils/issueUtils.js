@@ -16,10 +16,10 @@ export const needsDeployment = (b) =>
   b.st === 'Done' && !hasNoActionDoneLabel(b) && !hasNoDeployLabel(b) && !b.d;
 
 export function pillStatus(s) {
-  if (s === 'Done') return 'bg-[#e6f4ed] text-[#1a6641]';
-  if (s === 'Blocked') return 'bg-[#fde8e8] text-[#9b1c1c]';
-  if (s === 'To Do') return 'bg-[#f0f2f5] text-[#4a5568]';
-  return 'bg-[#fef3e2] text-[#7a4e00]';
+  if (s === 'Done') return 'bg-success-tint text-success-ink';
+  if (s === 'Blocked') return 'bg-danger-tint text-danger-ink';
+  if (s === 'To Do') return 'bg-canvas-alt text-ink-soft';
+  return 'bg-warning-tint text-warning-ink';
 }
 
 export function pillPriority(p) {
@@ -30,5 +30,5 @@ export function pillPriority(p) {
     Low: 'bg-[#1a3866] text-[#c5d8ff]',
     Lowest: 'bg-[#0d4d6b] text-[#b8eeff]',
   };
-  return map[p] || 'bg-gray-100 text-gray-600';
+  return map[p] || 'bg-canvas-alt text-ink-muted';
 }

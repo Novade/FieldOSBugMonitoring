@@ -21,7 +21,7 @@ export function BugsDashboard({ issues, onDrillTo }) {
 
   return (
     <div>
-      <div className="text-[12px] text-[#8896b0] text-center mb-3">
+      <div className="text-[12px] text-ink-subtle text-center mb-3">
         Excludes QA-BUG (found in staging, not client-facing) — see Backlog for QA bugs
       </div>
       <KpiRow issues={clientIssues} onDrillTo={onClientDrillTo} />

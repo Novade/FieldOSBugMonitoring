@@ -27,7 +27,7 @@ export function ChartLegend({ datasets, chartRef, showTotals = false }) {
           <span
             key={ds.label}
             onClick={() => toggle(i)}
-            className={`flex items-center gap-1.5 text-[11px] text-[#6b7a99] cursor-pointer px-1.5 py-0.5 rounded hover:bg-[#f5f7fa] transition-opacity ${
+            className={`flex items-center gap-1.5 text-[11px] text-ink-muted cursor-pointer px-1.5 py-0.5 rounded hover:bg-canvas transition-opacity ${
               muted[i] ? 'opacity-30' : ''
             }`}
           >

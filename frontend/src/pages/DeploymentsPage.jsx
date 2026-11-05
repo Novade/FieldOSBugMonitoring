@@ -40,7 +40,7 @@ export function DeploymentsPage() {
   return (
     <div className="max-w-[1380px] mx-auto px-7 py-6">
       <div className="flex items-center gap-2 mb-3">
-        {data?.syncedAt && <p className="text-[13px] text-[#8896b0]">{formatSyncTime(data.syncedAt)}</p>}
+        {data?.syncedAt && <p className="text-[13px] text-ink-subtle">{formatSyncTime(data.syncedAt)}</p>}
         <IconButton icon={RefreshCw} label="Sync now" onClick={refresh} disabled={loading} spinning={loading} />
       </div>
       <Banner message={error} visible={!!error} />
@@ -68,7 +68,7 @@ export function DeploymentsPage() {
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(e.target.value)}
-              className="text-[13px] border border-[#dde2ea] rounded-lg px-3 py-2 bg-white text-[#1a2332] cursor-pointer"
+              className="text-[13px] border border-line rounded-lg px-3 py-2 bg-surface text-ink cursor-pointer"
             >
               <option value="" disabled>Select year</option>
               {years.map((y) => (

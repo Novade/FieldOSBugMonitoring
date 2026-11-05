@@ -1,13 +1,17 @@
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { formatSyncTime } from '../../utils/dateUtils';
+import { Moon, Sun } from 'lucide-react';
 import Logo from '../../assets/logo.svg?react';
+import { useTheme } from '../../context/ThemeContext';
 
 // Pages that show their own inline "last sync" label instead of the TopBar one
 const OWN_SYNC_LABEL_PREFIXES = ['/pr-cycles', '/deployments'];
 
 export function TopBar({ fetchedAt }) {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
+  const isDark = theme === 'dark';
   const { pathname } = useLocation();
   const hideForRoute = OWN_SYNC_LABEL_PREFIXES.some((p) => pathname.startsWith(p));
   const syncLabel = fetchedAt && !hideForRoute ? formatSyncTime(fetchedAt) : null;
@@ -23,6 +27,14 @@ export function TopBar({ fetchedAt }) {
       </div>
       {user && (
         <div className="flex items-center gap-5">
+          <button
+            onClick={toggleTheme}
+            title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+            aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+            className="p-1.5 rounded-full text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+          >
+            {isDark ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
           {user.avatarUrl && (
             <img
               src={user.avatarUrl}

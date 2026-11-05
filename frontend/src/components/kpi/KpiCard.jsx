@@ -27,10 +27,10 @@ export function KpiCard({
 }) {
   const accent = ACCENT[type] || ACCENT.created;
   const valueColor = warn
-    ? 'text-[#c0392b]'
+    ? 'text-danger'
     : warn === false
-    ? 'text-[#2e7d5e]'
-    : 'text-[#1a2332]';
+    ? 'text-success'
+    : 'text-ink';
   const sizeClass =
     group === 'primary'
       ? 'flex-[1_1_0] min-w-[180px] max-w-[300px]'
@@ -41,7 +41,7 @@ export function KpiCard({
     <div
       onClick={onClick}
       {...hoverProps}
-      className={`relative bg-white rounded-lg border border-[#dde2ea] px-4 py-[14px] cursor-pointer transition-all duration-150
+      className={`relative bg-surface rounded-lg border border-line px-4 py-[14px] cursor-pointer transition-all duration-150
         hover:border-brand hover:shadow-[0_2px_12px_rgba(59,108,183,.12)]
         before:content-[''] before:absolute before:top-0 before:left-0 before:right-0 before:h-[3px] before:rounded-t-lg ${accent}
         ${sizeClass}`}
@@ -65,7 +65,7 @@ export function KpiCard({
       <div className={`text-[25px] font-bold ${valueColor}`}>
         {value ?? '-'}
       </div>
-      {sub && <div className="text-[11px] text-[#8896b0] mt-3">{sub}</div>}
+      {sub && <div className="text-[11px] text-ink-subtle mt-3">{sub}</div>}
       {tip}
     </div>
   );

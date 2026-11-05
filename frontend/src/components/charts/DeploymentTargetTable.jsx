@@ -42,7 +42,7 @@ export function DeploymentTargetTable({ issues }) {
           {['Priority', 'Median', 'Target', 'Status'].map((h, i) => (
             <th
               key={h}
-              className={`py-[7px] px-[10px] text-[10px] font-semibold text-[#8896b0] bg-[#f5f7fa] border-b border-[#dde2ea] uppercase tracking-[.4px] ${
+              className={`py-[7px] px-[10px] text-[10px] font-semibold text-ink-subtle bg-canvas border-b border-line uppercase tracking-[.4px] ${
                 i === 0 ? 'text-left' : i === 3 ? 'text-center' : 'text-right'
               }`}
             >
@@ -56,7 +56,7 @@ export function DeploymentTargetTable({ issues }) {
           <tr key={p}>
             <td
               className={`py-[6px] px-[8px] ${
-                idx < rows.length - 1 ? 'border-b border-[#eef0f4]' : ''
+                idx < rows.length - 1 ? 'border-b border-line-soft' : ''
               }`}
             >
               <span
@@ -66,32 +66,32 @@ export function DeploymentTargetTable({ issues }) {
               {p}
             </td>
             <td
-              className={`py-[6px] px-[8px] text-right text-[#1a2332] ${
-                idx < rows.length - 1 ? 'border-b border-[#eef0f4]' : ''
+              className={`py-[6px] px-[8px] text-right text-ink ${
+                idx < rows.length - 1 ? 'border-b border-line-soft' : ''
               }`}
             >
               {valStr}
             </td>
             <td
-              className={`py-[6px] px-[8px] text-right text-[#8896b0] ${
-                idx < rows.length - 1 ? 'border-b border-[#eef0f4]' : ''
+              className={`py-[6px] px-[8px] text-right text-ink-subtle ${
+                idx < rows.length - 1 ? 'border-b border-line-soft' : ''
               }`}
             >
               {target}
             </td>
             <td
               className={`py-[6px] px-[8px] text-center ${
-                idx < rows.length - 1 ? 'border-b border-[#eef0f4]' : ''
+                idx < rows.length - 1 ? 'border-b border-line-soft' : ''
               }`}
             >
               {v === null ? (
-                <span className="text-[10px] text-[#8896b0]">—</span>
+                <span className="text-[10px] text-ink-subtle">—</span>
               ) : onTrack ? (
-                <span className="bg-[#dcfce7] text-[#166534] px-[7px] py-[1px] rounded-[10px] text-[10px] font-medium">
+                <span className="bg-success-tint text-success-ink px-[7px] py-[1px] rounded-[10px] text-[10px] font-medium">
                   ✓ On track
                 </span>
               ) : (
-                <span className="bg-[#fee2e2] text-[#991b1b] px-[7px] py-[1px] rounded-[10px] text-[10px] font-medium">
+                <span className="bg-danger-tint text-danger-ink px-[7px] py-[1px] rounded-[10px] text-[10px] font-medium">
                   ✕ Over
                 </span>
               )}

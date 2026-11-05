@@ -8,6 +8,6 @@ export const SCOPE_LABELS = {
 };
 
 export const SOURCE_PILL = {
-  prod: { label: 'Prod', className: 'bg-[#fdecea] text-[#c0392b]' },
-  test: { label: 'Testing', className: 'bg-[#eef2fb] text-brand' },
+  prod: { label: 'Prod', className: 'bg-danger-tint text-danger' },
+  test: { label: 'Testing', className: 'bg-brand-tint text-brand' },
 };

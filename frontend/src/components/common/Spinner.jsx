@@ -6,7 +6,7 @@ export function Spinner({ height, label }) {
     >
       <div className="text-center">
         <div className={`inline-block border-4 border-brand border-t-transparent rounded-full animate-spin ${label ? 'w-8 h-8 mb-4' : 'w-6 h-6'}`} />
-        {label && <p className="text-[14px] text-[#6b7a99]">{label}</p>}
+        {label && <p className="text-[14px] text-ink-muted">{label}</p>}
       </div>
     </div>
   );

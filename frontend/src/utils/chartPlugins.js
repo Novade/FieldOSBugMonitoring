@@ -107,7 +107,7 @@ export function makeBarValueLabelsPlugin(id) {
           if (!value) return;
           ctx.save();
           ctx.font = '600 10px sans-serif';
-          ctx.fillStyle = '#4a5568';
+          ctx.fillStyle = Chart.defaults.color;
           ctx.textAlign = 'left';
           ctx.textBaseline = 'middle';
           ctx.fillText(value, bar.x + 4, bar.y);
