@@ -66,7 +66,7 @@ export function PRCyclePage() {
   return (
     <div className="max-w-[1380px] mx-auto px-7 py-6">
       {fetchedAt && (
-        <p className="text-[13px] text-[#8896b0] mb-3">{formatSyncTime(fetchedAt)}</p>
+        <p className="text-[13px] text-ink-subtle mb-3">{formatSyncTime(fetchedAt)}</p>
       )}
       {error && <Banner message={error} className="mb-5" />}
       <FailedRepoNotice failedRepos={failedRepos} retryingRepos={retryingRepos} onRetry={retry} />
@@ -80,7 +80,7 @@ export function PRCyclePage() {
               type="button"
               onClick={() => setActiveSection(section.id)}
               className={`px-4 py-2 rounded-md text-[14px] font-medium transition-colors ${
-                isActive ? 'bg-[#e2e5ea] text-[#1a2332]' : 'text-[#6b7a99] hover:bg-[#f0f2f5]'
+                isActive ? 'bg-surface-strong text-ink' : 'text-ink-muted hover:bg-canvas-alt'
               }`}
             >
               {section.label}
@@ -97,7 +97,7 @@ export function PRCyclePage() {
             <select
               value={selectedRepo}
               onChange={(e) => setSelectedRepo(e.target.value)}
-              className="text-[13px] border border-[#dde2ea] rounded-lg px-3 py-2 bg-white text-[#1a2332] cursor-pointer"
+              className="text-[13px] border border-line rounded-lg px-3 py-2 bg-surface text-ink cursor-pointer"
             >
               <option value="all">All Repos</option>
               {(repos?.repos || []).map((r) => (

@@ -8,8 +8,8 @@ export function IconButton({ icon: Icon, label, onClick, disabled, spinning, dan
         onClick={onClick}
         disabled={disabled}
         aria-label={label}
-        className={`p-1.5 rounded-md text-[#8896b0] transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
-          danger ? 'hover:bg-[#fdecea] hover:text-[#c0392b]' : 'hover:bg-[#eef2fb] hover:text-brand'
+        className={`p-1.5 rounded-md text-ink-subtle transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+          danger ? 'hover:bg-danger-tint hover:text-danger' : 'hover:bg-brand-tint hover:text-brand'
         }`}
       >
         <Icon size={15} className={spinning ? 'animate-spin' : ''} />

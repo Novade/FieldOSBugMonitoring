@@ -38,13 +38,13 @@ function PipelineRow({ pipeline }) {
   const outcome = failedAfter && (UNSUCCESSFUL[failedAfter.result] || { text: failedAfter.result, state: RESULT_STATES.failed });
 
   return (
-    <tr className="border-t border-[#f0f2f5] first:border-t-0">
-      <td className="w-[140px] py-2.5 pr-3 text-[#6b7a99] font-medium whitespace-nowrap align-top">{label}</td>
-      <td className="py-2.5 text-[13px] text-[#1a2332]">
+    <tr className="border-t border-line-soft first:border-t-0">
+      <td className="w-[140px] py-2.5 pr-3 text-ink-muted font-medium whitespace-nowrap align-top">{label}</td>
+      <td className="py-2.5 text-[13px] text-ink">
         {notFound && (
-          <span className="text-[#8896b0]">Pipeline “{pipeline.name}” not found</span>
+          <span className="text-ink-subtle">Pipeline “{pipeline.name}” not found</span>
         )}
-        {!notFound && !lastSuccess && <span className="text-[#8896b0]">No successful runs yet</span>}
+        {!notFound && !lastSuccess && <span className="text-ink-subtle">No successful runs yet</span>}
         {lastSuccess && (
           <div className="flex items-center gap-2 flex-wrap">
             <HoverLabel label="Last successful deploy" className="inline-flex">
@@ -52,7 +52,7 @@ function PipelineRow({ pipeline }) {
             </HoverLabel>
             <span className="font-semibold"><RunTime run={lastSuccess} /></span>
             <RunLink run={lastSuccess}>#{lastSuccess.buildNumber}</RunLink>
-            <span className="text-[12px] text-[#8896b0] font-mono">{lastSuccess.branch}</span>
+            <span className="text-[12px] text-ink-subtle font-mono">{lastSuccess.branch}</span>
           </div>
         )}
         {failedAfter && (

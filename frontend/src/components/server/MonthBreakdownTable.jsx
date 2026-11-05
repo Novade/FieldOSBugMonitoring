@@ -6,7 +6,7 @@ export function MonthBreakdownTable({ allMonths, selectedMonth, onSelectMonth, s
     <Card accent="teal" title="Month Breakdown" subtitle={`${selectedYear} — all months`}>
       <table className="w-full text-[13px] border-collapse">
         <thead>
-          <tr className="text-[11px] text-[#8896b0] uppercase">
+          <tr className="text-[11px] text-ink-subtle uppercase">
             <th className="text-left pb-2 font-medium">Month</th>
             <th className="text-right pb-2 font-medium">Service Level</th>
             <th className="text-right pb-2 font-medium">Downtime</th>
@@ -16,7 +16,7 @@ export function MonthBreakdownTable({ allMonths, selectedMonth, onSelectMonth, s
         <tbody>
           {allMonths.length === 0 ? (
             <tr>
-              <td colSpan={4} className="text-center text-[#8896b0] py-6 text-[13px]">No data available</td>
+              <td colSpan={4} className="text-center text-ink-subtle py-6 text-[13px]">No data available</td>
             </tr>
           ) : (
             allMonths.map((m) => {
@@ -35,11 +35,11 @@ export function MonthBreakdownTable({ allMonths, selectedMonth, onSelectMonth, s
                       onSelectMonth(m.month);
                     }
                   }}
-                  className={`border-t border-[#f0f2f5] transition-colors ${
-                    isSelected ? 'bg-[#eef2fb]' : isClickable ? 'cursor-pointer hover:bg-[#f7f8fa]' : ''
+                  className={`border-t border-line-soft transition-colors ${
+                    isSelected ? 'bg-brand-tint' : isClickable ? 'cursor-pointer hover:bg-canvas' : ''
                   }`}
                 >
-                  <td className="py-2 text-[#6b7a99]">
+                  <td className="py-2 text-ink-muted">
                     <span className="flex items-center gap-1.5">
                       {isSelected && <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#3b6cb7]" />}
                       {MONTH_LABELS[m.month - 1]}
@@ -47,17 +47,17 @@ export function MonthBreakdownTable({ allMonths, selectedMonth, onSelectMonth, s
                   </td>
                   <td className="text-right py-2">
                     {m.error ? (
-                      <span className="text-[#b0bac8]">—</span>
+                      <span className="text-ink-faint">—</span>
                     ) : (
                       <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold ${badgeClass(m.avgServiceLevel)}`}>
                         {m.avgServiceLevel?.toFixed(3)}%
                       </span>
                     )}
                   </td>
-                  <td className="text-right py-2 font-mono text-[12px] text-[#6b7a99]">
+                  <td className="text-right py-2 font-mono text-[12px] text-ink-muted">
                     {m.error ? '—' : fmtDowntime(m.totalDowntime)}
                   </td>
-                  <td className="text-right py-2 font-mono text-[12px] text-[#6b7a99]">
+                  <td className="text-right py-2 font-mono text-[12px] text-ink-muted">
                     {m.error ? '—' : m.totalOutages}
                   </td>
                 </tr>

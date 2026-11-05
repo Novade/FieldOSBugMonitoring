@@ -70,7 +70,7 @@ export function EscapeRateIssuesTable({ entry, scope, issues, loading, error }) 
   return (
     <Card accent="slate" title={title} subtitle={subtitle}>
       {!entry && (
-        <div className="flex flex-col items-center justify-center gap-2 py-16 text-[13px] text-[#8896b0] border border-dashed border-[#dde2ea] rounded-lg">
+        <div className="flex flex-col items-center justify-center gap-2 py-16 text-[13px] text-ink-subtle border border-dashed border-line rounded-lg">
           <MousePointerClick size={22} />
           No version selected
         </div>
@@ -78,7 +78,7 @@ export function EscapeRateIssuesTable({ entry, scope, issues, loading, error }) 
       {entry && loading && <Spinner height={160} />}
       {entry && !loading && error && <Banner message={error} visible />}
       {entry && !loading && !error && (
-        <div className="border border-[#dde2ea] rounded-lg overflow-hidden">
+        <div className="border border-line rounded-lg overflow-hidden">
           <div className="max-h-[560px] overflow-y-auto">
             <table className="w-full border-collapse text-[13px]">
               <thead className="sticky top-0 z-10">
@@ -99,7 +99,7 @@ export function EscapeRateIssuesTable({ entry, scope, issues, loading, error }) 
                     onClick={() => openIssue(b.k)}
                     onKeyDown={(e) => e.key === 'Enter' && openIssue(b.k)}
                     tabIndex={0}
-                    className="cursor-pointer hover:bg-[#f8faff] focus:outline-none focus:bg-[#f8faff]"
+                    className="cursor-pointer hover:bg-canvas focus:outline-none focus:bg-canvas"
                   >
                     <td className={`${td} text-brand font-semibold font-mono text-[11.5px] whitespace-nowrap`}>
                       <HoverLabel label="Open in Jira">{b.k}</HoverLabel>
@@ -111,18 +111,18 @@ export function EscapeRateIssuesTable({ entry, scope, issues, loading, error }) 
                     <td className={td}><StatusPill status={b.st} /></td>
                     <td className={td}><PriorityPill priority={b.p} /></td>
                     {showEpic && (
-                      <td className={`${td} max-w-[260px] truncate text-[12px] text-[#5a6075]`}>
+                      <td className={`${td} max-w-[260px] truncate text-[12px] text-ink-soft`}>
                         <HoverLabel as="div" className="truncate" label={b.epic ? `${b.epic.k} · ${b.epic.s}` : 'No epic'}>
                           {b.epic ? b.epic.s : '-'}
                         </HoverLabel>
                       </td>
                     )}
-                    <td className={`${td} whitespace-nowrap text-[12px] text-[#9aa0b4]`}>{b.c || '-'}</td>
+                    <td className={`${td} whitespace-nowrap text-[12px] text-ink-faint`}>{b.c || '-'}</td>
                   </tr>
                 ))}
                 {displayed.length === 0 && (
                   <tr>
-                    <td colSpan={5 + (showSource ? 1 : 0) + (showEpic ? 1 : 0)} className="px-3.5 py-8 text-center text-[13px] text-[#8896b0]">
+                    <td colSpan={5 + (showSource ? 1 : 0) + (showEpic ? 1 : 0)} className="px-3.5 py-8 text-center text-[13px] text-ink-subtle">
                       No bugs found for this range.
                     </td>
                   </tr>

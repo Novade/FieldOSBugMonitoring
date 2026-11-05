@@ -104,7 +104,7 @@ export function YearOverYearChart({ selectedMonitorId, selectedTabName }) {
           min: yMin,
           max: 100.3,
           ticks: { font: { size: 11 }, stepSize: step, callback: (v) => v <= 100 ? `${v}%` : '' },
-          grid: { color: '#f0f2f5' },
+          grid: {},
         },
       },
     };

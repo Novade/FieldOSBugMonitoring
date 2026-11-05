@@ -17,12 +17,12 @@ export function Tooltip({ label, note, children }) {
   return (
     <span className="relative inline-flex items-center" ref={wrapRef} onMouseEnter={handleMouseEnter} onMouseLeave={() => setPos((p) => ({ ...p, visible: false }))}>
       {children}
-      <span className="w-[14px] h-[14px] rounded-full bg-[#dde8f7] inline-flex items-center justify-center text-[9px] font-bold text-brand cursor-default shrink-0 ml-1">
+      <span className="w-[14px] h-[14px] rounded-full bg-brand-tint inline-flex items-center justify-center text-[9px] font-bold text-brand cursor-default shrink-0 ml-1">
         i
       </span>
       {pos.visible && (
         <div
-          className="fixed z-[9999] bg-[#1a2332] text-[#e8edf5] text-[11px] leading-relaxed px-3 py-2.5 rounded-md w-[230px] pointer-events-none"
+          className="fixed z-[9999] bg-[#1a2332] border border-transparent dark:border-white/20 text-[#e8edf5] text-[11px] leading-relaxed px-3 py-2.5 rounded-md w-[230px] pointer-events-none"
           style={{ top: pos.top, left: pos.left }}
         >
           {label && <div className="text-[10px] font-semibold text-[#94a8c8] uppercase tracking-wide mb-1.5">{label}</div>}

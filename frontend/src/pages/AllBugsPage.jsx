@@ -53,7 +53,7 @@ export function AllBugsPage() {
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <div className="inline-block w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin mb-4" />
-          <p className="text-[14px] text-[#6b7a99]">Fetching data from Jira…</p>
+          <p className="text-[14px] text-ink-muted">Fetching data from Jira…</p>
         </div>
       </div>
     );
@@ -72,7 +72,7 @@ export function AllBugsPage() {
               type="button"
               onClick={() => handleTabChange(section.id)}
               className={`px-4 py-2 rounded-md text-[14px] font-medium transition-colors ${
-                isActive ? 'bg-[#e2e5ea] text-[#1a2332]' : 'text-[#6b7a99] hover:bg-[#f0f2f5]'
+                isActive ? 'bg-surface-strong text-ink' : 'text-ink-muted hover:bg-canvas-alt'
               }`}
             >
               {section.label}

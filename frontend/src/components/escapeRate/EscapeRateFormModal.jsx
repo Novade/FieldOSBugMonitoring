@@ -17,16 +17,16 @@ function validate(form) {
 function DateRange({ label, hint, fromKey, toKey, form, onChange, disabled }) {
   return (
     <fieldset className="mb-4">
-      <legend className="text-[13px] font-semibold text-[#1a2332]">{label}</legend>
-      <div className="text-[12px] text-[#8896b0] mb-2">{hint}</div>
+      <legend className="text-[13px] font-semibold text-ink">{label}</legend>
+      <div className="text-[12px] text-ink-subtle mb-2">{hint}</div>
       <div className="grid grid-cols-2 gap-3">
         <label className="block">
-          <span className="block text-[12px] text-[#6b7a99] mb-1">Date from</span>
+          <span className="block text-[12px] text-ink-muted mb-1">Date from</span>
           <input type="date" className={input} value={form[fromKey]} max={form[toKey] || undefined}
             onChange={(e) => onChange(fromKey, e.target.value)} disabled={disabled} />
         </label>
         <label className="block">
-          <span className="block text-[12px] text-[#6b7a99] mb-1">Date to</span>
+          <span className="block text-[12px] text-ink-muted mb-1">Date to</span>
           <input type="date" className={input} value={form[toKey]} min={form[fromKey] || undefined}
             onChange={(e) => onChange(toKey, e.target.value)} disabled={disabled} />
         </label>
@@ -97,7 +97,7 @@ export function EscapeRateFormModal({ open, entry, onClose, onSubmit }) {
       <form id="escape-rate-form" onSubmit={handleSubmit} noValidate>
         <Banner message={error} visible={!!error} />
         <label className="block mb-4">
-          <span className="block text-[13px] font-semibold text-[#1a2332] mb-1">Version</span>
+          <span className="block text-[13px] font-semibold text-ink mb-1">Version</span>
           <input type="text" className={input} placeholder="e.g. v2.76.0" value={form.version}
             onChange={(e) => handleChange('version', e.target.value)} disabled={saving} autoFocus />
         </label>
@@ -111,7 +111,7 @@ export function EscapeRateFormModal({ open, entry, onClose, onSubmit }) {
           hint="From this version's prod deployment day (auto-filled from testing Date to) to the day before the next prod deployment."
           fromKey="prodFrom" toKey="prodTo" form={form} onChange={handleChange} disabled={saving}
         />
-        <p className="text-[12px] text-[#8896b0]">
+        <p className="text-[12px] text-ink-subtle">
           Bugs labelled no-action-done or cannot-reproduce are excluded. Counts are computed from Jira when you save.
         </p>
       </form>

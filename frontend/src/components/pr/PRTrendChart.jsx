@@ -75,7 +75,7 @@ export function PRTrendChart({ weeklyTrend, metricKey, label, axisLabel, color, 
       y: {
         beginAtZero: true,
         ticks: { font: { size: 10 }, callback: (v) => `${v}${unit}` },
-        title: { display: true, text: axisLabel, font: { size: 11 }, color: '#8896b0' },
+        title: { display: true, text: axisLabel, font: { size: 11 } },
       },
     },
   };

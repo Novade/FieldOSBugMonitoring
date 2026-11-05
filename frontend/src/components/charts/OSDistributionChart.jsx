@@ -65,7 +65,7 @@ export function OSDistributionChart({ issues, onDrillTo }) {
   if (labels.length === 0) {
     return (
       <div className="flex items-center justify-center h-full min-h-[160px]">
-        <p className="text-[13px] text-[#8896b0]">No OS data available.</p>
+        <p className="text-[13px] text-ink-subtle">No OS data available.</p>
       </div>
     );
   }
@@ -83,7 +83,7 @@ export function OSDistributionChart({ issues, onDrillTo }) {
         {labels.map((name, i) => (
           <span
             key={name}
-            className="flex items-center gap-1 text-[11px] text-[#4a5568]"
+            className="flex items-center gap-1 text-[11px] text-ink-soft"
           >
             <span
               className="inline-block w-2.5 h-2.5 rounded-sm flex-shrink-0"
@@ -93,7 +93,7 @@ export function OSDistributionChart({ issues, onDrillTo }) {
           </span>
         ))}
       </div>
-      <p className="text-[10px] text-[#a0aab8] mt-2 italic">
+      <p className="text-[10px] text-ink-faint mt-2 italic">
         * Issues with multiple platforms are counted in each applicable OS.
       </p>
     </div>

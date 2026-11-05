@@ -4,10 +4,10 @@ export const YEARS = Array.from({ length: 4 }, (_, i) => CURRENT_YEAR - 3 + i);
 export const YOY_COLORS = ['#3b6cb7', '#16a34a', '#d97706', '#64748b'];
 
 export function badgeClass(sl) {
-  if (sl == null) return 'bg-gray-100 text-gray-500';
-  if (sl >= 99) return 'bg-green-100 text-green-700';
-  if (sl >= 97) return 'bg-yellow-100 text-yellow-800';
-  return 'bg-red-100 text-red-700';
+  if (sl == null) return 'bg-canvas-alt text-ink-muted';
+  if (sl >= 99) return 'bg-success-tint text-success-ink';
+  if (sl >= 97) return 'bg-warning-tint text-warning-ink';
+  return 'bg-danger-tint text-danger-ink';
 }
 
 export function fmtDowntime(seconds) {

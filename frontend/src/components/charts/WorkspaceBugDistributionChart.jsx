@@ -70,7 +70,7 @@ export function WorkspaceBugDistributionChart({ issues, onSelectWorkspace }) {
       </div>
       <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 mt-3">
         {labels.map((name, i) => (
-          <span key={name} className="flex items-center gap-1 text-[11px] text-[#4a5568]">
+          <span key={name} className="flex items-center gap-1 text-[11px] text-ink-soft">
             <span
               className="inline-block w-2.5 h-2.5 rounded-sm flex-shrink-0"
               style={{ backgroundColor: COLORS[i % COLORS.length] }}

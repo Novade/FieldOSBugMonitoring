@@ -23,7 +23,7 @@ function CountButton({ value, active, onClick, title }) {
         type="button"
         onClick={onClick}
         className={`min-w-[36px] px-2 py-0.5 rounded-md font-semibold tabular-nums transition-colors ${
-          active ? 'bg-[#eef2fb] text-brand ring-1 ring-brand' : 'text-brand hover:bg-[#eef2fb] hover:underline'
+          active ? 'bg-brand-tint text-brand ring-1 ring-brand' : 'text-brand hover:bg-brand-tint hover:underline'
         }`}
       >
         {value}
@@ -66,7 +66,7 @@ export function EscapeRateTable({ entries, loading, selection, recomputingId, on
   );
   const totalBugs = totals.test + totals.prod;
   const totalRate = totalBugs ? (totals.prod / totalBugs) * 100 : null;
-  const tf = `${td} bg-[#f5f7fa] border-t border-[#dde2ea] font-semibold text-[#1a2332] tabular-nums`;
+  const tf = `${td} bg-canvas border-t border-line font-semibold text-ink tabular-nums`;
 
   return (
     <Card
@@ -83,7 +83,7 @@ export function EscapeRateTable({ entries, loading, selection, recomputingId, on
       {loading ? (
         <Spinner height={160} />
       ) : (
-        <div className="border border-[#dde2ea] rounded-lg overflow-hidden">
+        <div className="border border-line rounded-lg overflow-hidden">
           <div ref={scrollRef} className="overflow-y-auto" style={{ maxHeight }}>
             <table className="w-full border-collapse text-[13px]">
               <thead className="sticky top-0 z-10">
@@ -107,11 +107,11 @@ export function EscapeRateTable({ entries, loading, selection, recomputingId, on
                   const isSelected = (scope) => selection?.id === e.id && selection.scope === scope;
                   const busy = recomputingId === e.id || recomputingId === 'all';
                   return (
-                    <tr key={e.id} className={selection?.id === e.id ? 'bg-[#f8faff]' : 'hover:bg-[#f8faff]'}>
-                      <td className={`${td} font-semibold text-[#1a2332]`}>{e.version}</td>
-                      <td className={`${td} text-[12px] text-[#5a6075] whitespace-nowrap tabular-nums`}>
-                        <div><span className="inline-block w-[52px] text-[#9aa0b4]">Staging</span>{shortDate(e.testFrom)} → {shortDate(e.testTo)}</div>
-                        <div><span className="inline-block w-[52px] text-[#9aa0b4]">Prod</span>{shortDate(e.prodFrom)} → {shortDate(e.prodTo)}</div>
+                    <tr key={e.id} className={selection?.id === e.id ? 'bg-canvas' : 'hover:bg-canvas'}>
+                      <td className={`${td} font-semibold text-ink`}>{e.version}</td>
+                      <td className={`${td} text-[12px] text-ink-soft whitespace-nowrap tabular-nums`}>
+                        <div><span className="inline-block w-[52px] text-ink-faint">Staging</span>{shortDate(e.testFrom)} → {shortDate(e.testTo)}</div>
+                        <div><span className="inline-block w-[52px] text-ink-faint">Prod</span>{shortDate(e.prodFrom)} → {shortDate(e.prodTo)}</div>
                       </td>
                       <td className={`${td} text-right`}>
                         <CountButton value={e.testCount} active={isSelected('test')} onClick={() => onSelect(e, 'test')}
@@ -125,7 +125,7 @@ export function EscapeRateTable({ entries, loading, selection, recomputingId, on
                         <CountButton value={e.total} active={isSelected('total')} onClick={() => onSelect(e, 'total')}
                           title={`${e.testCount} during testing + ${e.prodCount} after prod`} />
                       </td>
-                      <td className={`${td} text-right font-semibold text-[#1a2332] tabular-nums`}>
+                      <td className={`${td} text-right font-semibold text-ink tabular-nums`}>
                         <HoverLabel label={`Computed ${new Date(e.computedAt).toLocaleString()}`}>{formatRate(e.rate)}</HoverLabel>
                       </td>
                       <td className={`${td} whitespace-nowrap text-right`}>
@@ -138,7 +138,7 @@ export function EscapeRateTable({ entries, loading, selection, recomputingId, on
                 })}
                 {entries.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-3.5 py-8 text-center text-[13px] text-[#8896b0]">
+                    <td colSpan={7} className="px-3.5 py-8 text-center text-[13px] text-ink-subtle">
                       No entries yet. Click New to add a version.
                     </td>
                   </tr>
@@ -148,7 +148,7 @@ export function EscapeRateTable({ entries, loading, selection, recomputingId, on
                 <tfoot className="sticky bottom-0 z-10">
                   <tr>
                     <td className={tf}>Total</td>
-                    <td className={`${tf} text-[12px] font-normal text-[#5a6075]`}>
+                    <td className={`${tf} text-[12px] font-normal text-ink-soft`}>
                       {entries.length} version{entries.length === 1 ? '' : 's'}
                     </td>
                     <td className={`${tf} text-right`}><span className="px-2">{totals.test}</span></td>

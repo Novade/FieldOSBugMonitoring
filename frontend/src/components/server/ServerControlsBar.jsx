@@ -11,7 +11,7 @@ export function ServerControlsBar({
         <select
           value={selectedYear}
           onChange={(e) => onYearChange(Number(e.target.value))}
-          className="text-[14px] text-[#4a5568] border border-[#dde2ea] rounded-md px-3 py-2 bg-white focus:outline-none focus:ring-1 focus:ring-[#3b6cb7]"
+          className="text-[14px] text-ink-soft border border-line rounded-md px-3 py-2 bg-surface focus:outline-none focus:ring-1 focus:ring-[#3b6cb7]"
         >
           {YEARS.map((yr) => (
             <option key={yr} value={yr}>{yr}</option>
@@ -30,10 +30,10 @@ export function ServerControlsBar({
                 onClick={() => id && onMonitorChange(id)}
                 className={`px-3 py-2 rounded-md text-[14px] font-medium transition-colors ${
                   isActive
-                    ? 'bg-[#e2e5ea] text-[#6b7a99]'
+                    ? 'bg-surface-strong text-ink-muted'
                     : isDisabled || monitorsLoading
-                    ? 'text-[#b0bac8] cursor-not-allowed'
-                    : 'text-[#6b7a99] hover:bg-[#f0f2f5]'
+                    ? 'text-ink-faint cursor-not-allowed'
+                    : 'text-ink-muted hover:bg-canvas-alt'
                 }`}
               >
                 {name}
@@ -44,7 +44,7 @@ export function ServerControlsBar({
       </div>
 
       {monitorsError && (
-        <p className="text-amber-700 text-[13px] mb-4 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
+        <p className="text-warning-ink text-[13px] mb-4 bg-warning-tint border border-warning-line rounded-md px-3 py-2">
           Could not load monitor list: {monitorsError}. Showing "All" view.
         </p>
       )}

@@ -20,14 +20,14 @@ export function Card({
   const accentClass = ACCENT_COLORS[accent] || ACCENT_COLORS.blue;
   return (
     <div
-      className={`bg-white rounded-lg border border-[#dde2ea] overflow-hidden ${className}`}
+      className={`bg-surface rounded-lg border border-line overflow-hidden ${className}`}
     >
       <div className={`px-[18px] pt-[14px] border-t-[3px] ${accentClass}`}>
-        <div className="text-[16px] font-semibold text-[#1a2332] mb-0.5">
+        <div className="text-[16px] font-semibold text-ink mb-0.5">
           {title}
         </div>
         {subtitle && (
-          <div className="text-[12px] text-[#8896b0] mb-3 mt-0.5">
+          <div className="text-[12px] text-ink-subtle mb-3 mt-0.5">
             {subtitle}
           </div>
         )}
