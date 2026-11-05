@@ -10,7 +10,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import { isDeployed, hasNoActionDoneLabel } from '../../utils/issueUtils';
+import { isDeployed, isValidBug } from '../../utils/issueUtils';
 import { ws, wl } from '../../utils/dateUtils';
 import { ChartLegend } from './ChartLegend';
 
@@ -27,10 +27,7 @@ ChartJS.register(
 export function WeeklyCreatedVsDeployedChart({ issues, onDrillTo }) {
   const chartRef = useRef(null);
   const deployed = useMemo(() => issues.filter(isDeployed), [issues]);
-  const validCreated = useMemo(
-    () => issues.filter((b) => !hasNoActionDoneLabel(b)),
-    [issues]
-  );
+  const validCreated = useMemo(() => issues.filter(isValidBug), [issues]);
   const { labels, datasets, weeks } = useMemo(() => {
     const aw = Array.from(
       new Set([

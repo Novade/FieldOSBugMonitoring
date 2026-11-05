@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Card } from '../common/Card';
 import { KpiRow } from '../kpi/KpiRow';
 import { AssigneeWorkloadChart } from '../charts/AssigneeWorkloadChart';
@@ -10,52 +11,61 @@ import { CumulativeBandChart } from '../charts/CumulativeBandChart';
 import { WeeklyCreatedVsResolvedChart } from '../charts/WeeklyCreatedVsResolvedChart';
 import { WeeklyCreatedVsDeployedChart } from '../charts/WeeklyCreatedVsDeployedChart';
 import { CumulativeCreatedVsResolvedChart } from '../charts/CumulativeCreatedVsResolvedChart';
+import { isQaBug } from '../../utils/issueUtils';
 
 export function BugsDashboard({ issues, onDrillTo }) {
+  // Dashboard is client-facing only: QA-BUG (found in staging) excluded everywhere
+  const clientIssues = useMemo(() => issues.filter((b) => !isQaBug(b)), [issues]);
+  const onClientDrillTo = (key, val, label) =>
+    onDrillTo(key, val, `${label} (excl. QA-BUG)`, { excludeQa: true });
+
   return (
     <div>
-      <KpiRow issues={issues} onDrillTo={onDrillTo} />
+      <div className="text-[12px] text-[#8896b0] text-center mb-3">
+        Excludes QA-BUG (found in staging, not client-facing) — see Backlog for QA bugs
+      </div>
+      <KpiRow issues={clientIssues} onDrillTo={onClientDrillTo} />
 
       <Card accent="coral" title="Assignee workload" subtitle="Open bugs per person by priority — spot who is overloaded" className="mb-4">
-        <AssigneeWorkloadChart issues={issues} onDrillTo={onDrillTo} />
+        <AssigneeWorkloadChart issues={clientIssues} onDrillTo={onClientDrillTo} />
       </Card>
 
       <div className="grid grid-cols-2 max-[1100px]:grid-cols-1 gap-4 mb-4">
         <Card accent="blue" title="Bugs by priority" subtitle="Created (Jan 2026+) vs resolved (Jan 2026+) by severity">
-          <PriorityChart issues={issues} onDrillTo={onDrillTo} />
+          <PriorityChart issues={clientIssues} onDrillTo={onClientDrillTo} />
         </Card>
         <Card accent="amber" title="Bug age breakdown" subtitle="Currently open bugs grouped by how long they have been unresolved — longer = higher risk">
-          <BugAgeChart issues={issues} onDrillTo={onDrillTo} />
+          <BugAgeChart issues={clientIssues} onDrillTo={onClientDrillTo} />
         </Card>
       </div>
 
       <div className="grid grid-cols-2 max-[1100px]:grid-cols-1 gap-4 mb-4">
         <Card accent="teal" title="Median deployment time (days)" subtitle="Creation to deployment in working days (excl. weekends) · dashed line shows target">
-          <DeploymentTimeChart issues={issues} />
+          <DeploymentTimeChart issues={clientIssues} />
         </Card>
         <Card accent="teal" title="Deployment target status" subtitle="Median working days vs SLA target">
-          <DeploymentTargetTable issues={issues} />
+          <DeploymentTargetTable issues={clientIssues} />
         </Card>
       </div>
 
       <Card accent="indigo" title="Weekly bug creation by priority" subtitle="Bugs created each week by severity — click a point to view that week's issues" className="mb-4">
-        <WeeklyPriorityChart issues={issues} onDrillTo={onDrillTo} />
+        <WeeklyPriorityChart issues={clientIssues} onDrillTo={onClientDrillTo} />
       </Card>
 
       <Card accent="purple" title="Cumulative created bugs by priority band" subtitle="Running totals — each line includes all priorities above it" className="mb-4">
-        <CumulativeBandChart issues={issues} />
+        <CumulativeBandChart issues={clientIssues} />
       </Card>
 
-      <Card accent="slate" title="Weekly created vs resolved" subtitle="All bugs resolved in 2026 vs created in 2026, per week" className="mb-4">
-        <WeeklyCreatedVsResolvedChart issues={issues} onDrillTo={onDrillTo} />
+      <Card accent="slate" title="Weekly created vs resolved" subtitle="Bugs resolved in 2026 vs created in 2026, per week" className="mb-4">
+        <WeeklyCreatedVsResolvedChart issues={clientIssues} onDrillTo={onClientDrillTo} />
       </Card>
 
-      <Card accent="slate" title="Cumulative created vs resolved" subtitle="Gap = active backlog. When lines meet, team is clear" className="mb-4">
-        <CumulativeCreatedVsResolvedChart issues={issues} onDrillTo={onDrillTo} />
+      <Card accent="slate" title="Cumulative created vs resolved" subtitle="Gap = client-facing backlog. When lines meet, team is clear" className="mb-4">
+        <CumulativeCreatedVsResolvedChart issues={clientIssues} onDrillTo={onClientDrillTo} />
       </Card>
 
       <Card accent="slate" title="Weekly created vs deployed" subtitle="Bugs created vs actually deployed to prod, per week (1-week buckets to surface hotfixes)" className="mb-4">
-        <WeeklyCreatedVsDeployedChart issues={issues} onDrillTo={onDrillTo} />
+        <WeeklyCreatedVsDeployedChart issues={clientIssues} onDrillTo={onClientDrillTo} />
       </Card>
     </div>
   );

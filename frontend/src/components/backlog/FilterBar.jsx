@@ -12,6 +12,7 @@ const FILTER_FIELDS = [
 ];
 
 const BOOLEAN_FILTERS = [
+  { key: 'qaBug', label: 'QA bugs' },
   { key: 'noActionDone', label: 'No Action Done' },
   { key: 'pendingDeployment', label: 'Validated, pending deployment' },
 ];
