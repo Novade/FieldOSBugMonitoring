@@ -3,13 +3,13 @@ import { StatusPill, PriorityPill } from '../common/Pill';
 import { DrillBadge } from './DrillBadge';
 import { FilterBar } from './FilterBar';
 import { HoverLabel } from '../common/HoverLabel';
-import { isOpen, isDeploy, isResolved, isDeployed, hasNoActionDoneLabel, needsDeployment } from '../../utils/issueUtils';
+import { isOpen, isDeploy, isResolved, isDeployed, hasNoActionDoneLabel, needsDeployment, isQaBug, isValidBug } from '../../utils/issueUtils';
 import { ws } from '../../utils/dateUtils';
 import { PSORT } from '../../constants/jira';
 
 const JIRA_BASE = 'https://novade.atlassian.net/browse';
 
-const INITIAL_FILTERS = { search: '', priority: [], status: [], assignee: [], reg: [], os: [], noActionDone: false, pendingDeployment: false };
+const INITIAL_FILTERS = { search: '', priority: [], status: [], assignee: [], reg: [], os: [], qaBug: false, noActionDone: false, pendingDeployment: false };
 
 function drillToFilterField(drill) {
   if (!drill) return null;
@@ -22,6 +22,7 @@ function drillToFilterField(drill) {
 
 function applyDrill(data, drill) {
   if (!drill) return data;
+  if (drill.excludeQa) data = data.filter((b) => !isQaBug(b));
   const today = new Date();
   switch (drill.key) {
     case 'p':
@@ -41,17 +42,17 @@ function applyDrill(data, drill) {
     case 'deployed':
       return data.filter(isDeployed);
     case 'created_valid':
-      return data.filter((b) => !hasNoActionDoneLabel(b));
+      return data.filter(isValidBug);
     case 'all':
       return data;
     case 'week_c':
       return data.filter((b) => ws(b.c) === drill.val);
     case 'week_c_valid':
-      return data.filter((b) => ws(b.c) === drill.val && !hasNoActionDoneLabel(b));
+      return data.filter((b) => ws(b.c) === drill.val && isValidBug(b));
     case 'week_r':
       return data.filter((b) => b.r && ws(b.r) === drill.val);
     case 'week_d':
-      return data.filter((b) => b.d && ws(b.d) === drill.val);
+      return data.filter((b) => isDeployed(b) && ws(b.d) === drill.val);
     case 'cum_c':
       return data.filter((b) => ws(b.c) <= drill.val);
     case 'cum_r':
@@ -134,7 +135,7 @@ export function BacklogTable({ issues, drill, onClearDrill, showWorkspace = fals
   const displayed = useMemo(() => {
     let data = applyDrill([...issues], drill);
 
-    const { search, priority, status, assignee, reg, os, noActionDone, pendingDeployment } = filters;
+    const { search, priority, status, assignee, reg, os, qaBug, noActionDone, pendingDeployment } = filters;
     if (search)
       data = data.filter(
         (b) =>
@@ -146,6 +147,7 @@ export function BacklogTable({ issues, drill, onClearDrill, showWorkspace = fals
     if (assignee.length) data = data.filter((b) => assignee.includes(b.a));
     if (reg.length) data = data.filter((b) => b.reg?.some((r) => reg.includes(r)));
     if (os.length) data = data.filter((b) => b.os?.some((o) => os.includes(o)));
+    if (qaBug) data = data.filter(isQaBug);
     if (noActionDone) data = data.filter(hasNoActionDoneLabel);
     if (pendingDeployment) data = data.filter(needsDeployment);
 
@@ -244,7 +246,12 @@ export function BacklogTable({ issues, drill, onClearDrill, showWorkspace = fals
                       href={`${JIRA_BASE}/${b.k}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-brand font-semibold font-mono text-[11.5px] hover:underline"
+                      title={isQaBug(b) ? 'QA-BUG (found in staging)' : undefined}
+                      className={`font-semibold font-mono text-[11.5px] hover:underline ${
+                        isQaBug(b)
+                          ? 'text-[#b45309] bg-[#fef3c7] px-1.5 py-0.5 rounded'
+                          : 'text-brand'
+                      }`}
                     >
                       {b.k}
                     </a>

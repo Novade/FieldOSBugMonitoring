@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { fetchBugs } from '../services/jiraService';
+import { isQaBug } from '../utils/issueUtils';
 
 export function useClientBugsData() {
   const [bugs, setBugs] = useState([]);
@@ -16,7 +17,8 @@ export function useClientBugsData() {
       try {
         const bugsRes = await fetchBugs();
         if (!cancelled) {
-          const issues = bugsRes.issues || [];
+          // Client-facing pages: QA-BUG (found in staging) never shown
+          const issues = (bugsRes.issues || []).filter((b) => !isQaBug(b));
           const ws = Array.from(
             new Set(issues.flatMap((b) => b.w).filter(Boolean))
           ).sort((a, b) => a.localeCompare(b));

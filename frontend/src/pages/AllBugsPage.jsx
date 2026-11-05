@@ -43,8 +43,8 @@ export function AllBugsPage() {
     navigate(TAB_TO_PATH[tabId]);
   }
 
-  function handleBugDrillTo(key, val, label) {
-    setBugDrill({ key, val, label });
+  function handleBugDrillTo(key, val, label, opts = {}) {
+    setBugDrill({ key, val, label, ...opts });
     navigate(TAB_TO_PATH.backlog);
   }
 

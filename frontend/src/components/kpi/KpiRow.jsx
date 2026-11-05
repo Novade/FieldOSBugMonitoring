@@ -5,14 +5,15 @@ import {
   isDeploy,
   isDeployed,
   needsDeployment,
-  hasNoActionDoneLabel,
+  isValidBug,
 } from '../../utils/issueUtils';
 
 export function KpiRow({ issues, onDrillTo }) {
   const kpis = useMemo(() => {
+    // Callers pass client-facing issues (QA-BUG already removed)
     const total = issues.length;
-    const noActionDone = issues.filter(hasNoActionDoneLabel).length;
-    const validCreated = issues.length - noActionDone;
+    const validCreated = issues.filter(isValidBug).length;
+    const invalid = total - validCreated;
     const deployed = issues.filter(isDeployed).length;
     const net = issues.filter((b) => isOpen(b) && b.st !== 'Blocked').length;
     const deploy = issues.filter(isDeploy).length;
@@ -21,7 +22,7 @@ export function KpiRow({ issues, onDrillTo }) {
     return {
       total,
       validCreated,
-      noActionDone,
+      invalid,
       deployed,
       net,
       deploy,
@@ -46,7 +47,7 @@ export function KpiRow({ issues, onDrillTo }) {
           group="primary"
           label="Total created (valid)"
           value={kpis.validCreated}
-          sub={`Excludes No Action Done (${kpis.noActionDone})`}
+          sub={`Excludes No Action Done / Cannot Reproduce (${kpis.invalid})`}
           onClick={() => onDrillTo('created_valid', true, 'Created (valid)')}
         />
         <KpiCard

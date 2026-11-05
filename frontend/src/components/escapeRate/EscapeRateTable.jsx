@@ -50,7 +50,8 @@ function useMaxRowsHeight(rowCount, loading) {
       return;
     }
     const rowsHeight = rows.slice(0, MAX_VISIBLE_ROWS).reduce((sum, r) => sum + r.offsetHeight, 0);
-    setMaxHeight((head?.offsetHeight ?? 0) + rowsHeight);
+    const foot = el.querySelector('tfoot');
+    setMaxHeight((head?.offsetHeight ?? 0) + rowsHeight + (foot?.offsetHeight ?? 0));
   }, [rowCount, loading]);
 
   return { scrollRef, maxHeight };
@@ -58,6 +59,14 @@ function useMaxRowsHeight(rowCount, loading) {
 
 export function EscapeRateTable({ entries, loading, selection, recomputingId, onNew, onSelect, onEdit, onRecompute, onRecomputeAll, onDelete }) {
   const { scrollRef, maxHeight } = useMaxRowsHeight(entries.length, loading);
+  // Pooled rate across versions: total after-prod ÷ total bugs (weighted by volume)
+  const totals = entries.reduce(
+    (t, e) => ({ test: t.test + (e.testCount || 0), prod: t.prod + (e.prodCount || 0) }),
+    { test: 0, prod: 0 }
+  );
+  const totalBugs = totals.test + totals.prod;
+  const totalRate = totalBugs ? (totals.prod / totalBugs) * 100 : null;
+  const tf = `${td} bg-[#f5f7fa] border-t border-[#dde2ea] font-semibold text-[#1a2332] tabular-nums`;
 
   return (
     <Card
@@ -135,6 +144,23 @@ export function EscapeRateTable({ entries, loading, selection, recomputingId, on
                   </tr>
                 )}
               </tbody>
+              {entries.length > 0 && (
+                <tfoot className="sticky bottom-0 z-10">
+                  <tr>
+                    <td className={tf}>Total</td>
+                    <td className={`${tf} text-[12px] font-normal text-[#5a6075]`}>
+                      {entries.length} version{entries.length === 1 ? '' : 's'}
+                    </td>
+                    <td className={`${tf} text-right`}><span className="px-2">{totals.test}</span></td>
+                    <td className={`${tf} text-right`}><span className="px-2">{totals.prod}</span></td>
+                    <td className={`${tf} text-right`}><span className="px-2">{totalBugs}</span></td>
+                    <td className={`${tf} text-right`}>
+                      <HoverLabel label="Total bugs after prod ÷ total bugs, across all versions">{formatRate(totalRate)}</HoverLabel>
+                    </td>
+                    <td className={tf} />
+                  </tr>
+                </tfoot>
+              )}
             </table>
           </div>
         </div>

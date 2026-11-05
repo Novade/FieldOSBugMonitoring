@@ -5,6 +5,10 @@ export const isDeploy = (b) => DEPLOY_STATUSES.has(b.st);
 export const isResolved = (b) => b.st === 'Done' && !!b.r;
 export const isDeployed = (b) => b.st === 'Done' && !!b.d;
 export const hasNoActionDoneLabel = (b) => !!b.l?.includes('no-action-done');
+const hasLabel = (b, label) => !!b.l?.some((l) => l.toLowerCase() === label);
+// Detected in staging, not client-facing
+export const isQaBug = (b) => hasLabel(b, 'qa-bug');
+export const isValidBug = (b) => !hasLabel(b, 'no-action-done') && !hasLabel(b, 'cannot-reproduce');
 // Excluded from "Validated, pending deployment" (matched case-insensitively)
 const NO_DEPLOY_LABELS = new Set(['qa-bug', 'cannot-reproduce', 'duplicate']);
 const hasNoDeployLabel = (b) => !!b.l?.some((l) => NO_DEPLOY_LABELS.has(l.toLowerCase()));
