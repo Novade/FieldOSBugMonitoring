@@ -28,5 +28,20 @@
     "computedAt": "2026-11-05T06:20:13.625Z",
     "createdBy": "Paul Emill Macalaguim",
     "updatedBy": "Paul Emill Macalaguim"
+  },
+  {
+    "id": "42735c90-9dfa-446d-b2ba-e5fc37261a29",
+    "version": "v2.78.0",
+    "testFrom": "2026-10-08",
+    "testTo": "2026-10-21",
+    "prodFrom": "2026-10-21",
+    "prodTo": "2026-10-30",
+    "prodCount": 20,
+    "testCount": 14,
+    "total": 34,
+    "rate": 58.8,
+    "computedAt": "2026-11-05T06:20:39.136Z",
+    "createdBy": "Paul Emill Macalaguim",
+    "updatedBy": "Paul Emill Macalaguim"
   }
 ]
