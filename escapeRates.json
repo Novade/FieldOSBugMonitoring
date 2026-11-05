@@ -10,9 +10,9 @@
     "testCount": 11,
     "total": 28,
     "rate": 60.7,
-    "computedAt": "2026-11-04T08:18:00.865Z",
+    "computedAt": "2026-11-05T06:13:24.029Z",
     "createdBy": "Paul Emill Macalaguim",
-    "updatedBy": "Roull Hapil"
+    "updatedBy": "Paul Emill Macalaguim"
   },
   {
     "id": "2259ffbf-9d78-4ff5-a989-8463f069da02",
@@ -21,13 +21,13 @@
     "testTo": "2026-10-06",
     "prodFrom": "2026-10-06",
     "prodTo": "2026-10-21",
-    "prodCount": 39,
+    "prodCount": 38,
     "testCount": 6,
-    "total": 45,
-    "rate": 86.7,
-    "computedAt": "2026-11-04T08:18:00.841Z",
+    "total": 44,
+    "rate": 86.4,
+    "computedAt": "2026-11-05T06:13:24.035Z",
     "createdBy": "Paul Emill Macalaguim",
-    "updatedBy": "Roull Hapil"
+    "updatedBy": "Paul Emill Macalaguim"
   },
   {
     "id": "c527b928-3179-4a5e-a9e7-b9b520530e24",
@@ -40,9 +40,9 @@
     "testCount": 14,
     "total": 34,
     "rate": 58.8,
-    "computedAt": "2026-11-04T08:18:00.831Z",
+    "computedAt": "2026-11-05T06:13:24.023Z",
     "createdBy": "Paul Emill Macalaguim",
-    "updatedBy": "Roull Hapil"
+    "updatedBy": "Paul Emill Macalaguim"
   },
   {
     "id": "dca701c4-2bd1-4cda-96dd-c118eb2f93a8",
@@ -51,12 +51,12 @@
     "testTo": "2026-11-03",
     "prodFrom": "2026-11-03",
     "prodTo": "2026-11-16",
-    "prodCount": 3,
+    "prodCount": 6,
     "testCount": 6,
-    "total": 9,
-    "rate": 33.3,
-    "computedAt": "2026-11-04T08:18:01.014Z",
+    "total": 12,
+    "rate": 50,
+    "computedAt": "2026-11-05T06:13:24.206Z",
     "createdBy": "Paul Emill Macalaguim",
-    "updatedBy": "Roull Hapil"
+    "updatedBy": "Paul Emill Macalaguim"
   }
 ]
