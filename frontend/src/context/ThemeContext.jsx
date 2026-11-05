@@ -11,7 +11,7 @@ function readInitialTheme() {
   } catch {
     /* storage unavailable */
   }
-  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  return 'light';
 }
 
 // Chart.js draws on canvas, so CSS variables don't reach it — push the palette into its defaults.
