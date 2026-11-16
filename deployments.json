@@ -1,6 +1,15 @@
 {
   "runs": [
     {
+      "id": 45317,
+      "pipeline": "NovadeLiteBackendServices/ReportExportService Staging",
+      "result": "succeeded",
+      "finishTime": "2026-11-16T03:39:20.2184742Z",
+      "buildNumber": "20261116.2",
+      "branch": "feature/pdf-measurement-output",
+      "commit": "fa9bd231"
+    },
+    {
       "id": 45300,
       "pipeline": "NovadeLiteBackendServices/ReportExportService Staging",
       "result": "succeeded",
