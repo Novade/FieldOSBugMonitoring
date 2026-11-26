@@ -1,6 +1,24 @@
 {
   "runs": [
     {
+      "id": 46084,
+      "pipeline": "NovadeLite Mobile/iOS Staging",
+      "result": "succeeded",
+      "finishTime": "2026-11-26T03:00:29.0804778Z",
+      "buildNumber": "20261126.1",
+      "branch": "release/2.81.x",
+      "commit": "a7576ec2"
+    },
+    {
+      "id": 46085,
+      "pipeline": "NovadeLite Mobile/Android Staging",
+      "result": "succeeded",
+      "finishTime": "2026-11-26T02:35:45.5363085Z",
+      "buildNumber": "20261126.1",
+      "branch": "release/2.81.x",
+      "commit": "a7576ec2"
+    },
+    {
       "id": 46083,
       "pipeline": "NovadeLite Web/Deploy to Staging",
       "result": "succeeded",
